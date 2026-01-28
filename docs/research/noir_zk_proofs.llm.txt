@@ -1,0 +1,734 @@
+# Noir: Zero-Knowledge Proofs Domain Specific Language
+## Comprehensive Developer Guide for Privacy Applications
+
+**Last Updated:** January 2026
+**Official Website:** https://noir-lang.org
+**GitHub:** https://github.com/noir-lang/noir
+**Documentation:** https://noir-lang.org/docs
+
+---
+
+## OVERVIEW
+
+Noir is an open-source, domain-specific language (DSL) for building zero-knowledge (ZK) proof systems. It is proving-system-agnostic, meaning you can compile Noir code to work with multiple backends like Barretenberg, Halo2, Plonky2, and Groth16.
+
+**Key Features:**
+- Simple, Rust-inspired syntax
+- Backend-agnostic compilation via ACIR (Abstract Circuit Intermediate Representation)
+- NoirJS for browser-based proof generation
+- Automatic Solidity verifier generation
+- Type-safe circuit programming
+- First-class support for cryptographic primitives (hashing, signature verification, elliptic curves)
+
+**Why Noir for Solana/Privacy Applications:**
+- Lower learning curve compared to circom
+- Smaller proof sizes and faster verification
+- Excellent ecosystem tooling
+- Growing community (600+ GitHub projects, 900+ stars, 2000+ IDE installations)
+- Active development and security audits underway
+
+---
+
+## INSTALLATION & SETUP
+
+### Prerequisites
+- Rust (1.70 or later)
+- Node.js/npm for frontend integration
+
+### Install Noir CLI
+
+```bash
+# Using noirup (recommended)
+curl -L https://install.noir-lang.org | bash
+source ~/.bashrc
+noirup
+
+# Verify installation
+nargo --version
+```
+
+### Create Your First Project
+
+```bash
+nargo new my_first_circuit
+cd my_first_circuit
+
+# Project structure:
+# my_first_circuit/
+# ├── Nargo.toml         # Project configuration
+# ├── src/
+# │   └── main.nr        # Circuit code
+# └── Prover.toml        # Test inputs
+
+# View generated structure
+cat Nargo.toml
+cat src/main.nr
+```
+
+---
+
+## CORE CONCEPTS
+
+### 1. CIRCUITS AND CONSTRAINTS
+
+A Noir circuit is a program that generates constraints for proof generation. These constraints must be satisfied for a proof to be valid.
+
+**Basic Structure:**
+
+```noir
+// src/main.nr
+fn main(x: Field, y: pub Field) {
+    assert(x + 2 == y);
+    // Proves: knows x such that x + 2 = y (without revealing x)
+}
+```
+
+**Key Terms:**
+- **Private Input (x):** Known only to prover
+- **Public Input (y pub):** Known to both prover and verifier
+- **Constraints:** Mathematical relationships that must be satisfied
+
+### 2. FIELD ARITHMETIC
+
+All numeric operations in Noir happen in a finite field (default: BN254).
+
+```noir
+fn arithmetic_operations() {
+    let x: Field = 10;
+    let y: Field = 20;
+    
+    // Basic operations
+    let sum = x + y;        // 30
+    let diff = x - y;       // -10 (in field arithmetic)
+    let prod = x * y;       // 200
+    let quot = x / y;       // x * y^(-1) in field
+    
+    // Modular arithmetic (implicit)
+    // All operations mod p where p = 21888242871839275222246405745257275088548364400416034343698204186575808495617
+}
+```
+
+### 3. DATA TYPES
+
+```noir
+// Primitives
+let field_val: Field = 5;              // Default numeric type
+let boolean: bool = true;              // true/false
+let array: [u8; 3] = [1, 2, 3];       // Fixed-size arrays
+let tuple: (Field, bool) = (5, true);  // Tuples
+
+// Functions
+fn add(x: Field, y: Field) -> Field {
+    x + y
+}
+
+// Structs
+struct Point {
+    x: Field,
+    y: Field,
+}
+
+// Custom types
+type MyField = Field;
+```
+
+### 4. PUBLIC VS PRIVATE INPUTS
+
+**Example from Veiled (Privacy Authentication):**
+
+```noir
+use dep::std::hash::poseidon::bn254::hash_1;
+
+fn prove_authentication(
+    wallet: Field,
+    domain: Field,
+    secret: [u8; 32],
+    public_nullifier: pub Field,
+    public_domain: pub Field,
+) {
+    // Nullifier = hash(wallet, domain, secret)
+    let nullifier = hash_1([wallet + domain]);
+    
+    // Prove nullifier matches without revealing wallet/secret
+    assert(nullifier == public_nullifier);
+    assert(domain == public_domain);
+}
+```
+
+---
+
+## STANDARD LIBRARY (Critical Functions)
+
+### Hash Functions
+
+**Poseidon Hash (Circuit-Optimized):**
+
+```noir
+use dep::std::hash::poseidon::bn254::{hash_1, hash_2, hash_3};
+
+fn use_poseidon() {
+    let h1 = hash_1([x]);                    // Single input
+    let h2 = hash_2([x, y]);                 // Two inputs
+    let h3 = hash_3([x, y, z]);             // Three inputs
+    
+    // Used for:
+    // - Nullifier generation
+    // - Merkle tree leaves
+    // - Commitment schemes
+}
+```
+
+**SHA-256:**
+
+```noir
+use dep::std::hash::sha256;
+
+fn use_sha256() {
+    let bytes = [1, 2, 3, 4];
+    let hash = sha256(bytes);               // Returns [u8; 32]
+}
+```
+
+**Keccak-256:**
+
+```noir
+use dep::std::hash::keccak256;
+
+fn use_keccak() {
+    let bytes = [1, 2, 3];
+    let hash = keccak256(bytes);            // Returns [u8; 32]
+}
+```
+
+**When to Use:**
+- **Poseidon:** Inside circuits (optimized for constraint systems)
+- **SHA-256/Keccak:** When interacting with existing blockchain systems
+
+### Elliptic Curve Operations
+
+```noir
+use dep::std::ec::derive_public_key;
+use dep::std::ec::tecurve::affine::{Curve, Point};
+
+fn ec_operations() {
+    // Ed25519 key derivation (Solana signatures)
+    let secret_key: [u8; 32] = [...];
+    let public_key = derive_public_key(secret_key);
+    
+    // Useful for proving wallet ownership
+    // Without revealing the actual wallet address
+}
+```
+
+### Signature Verification
+
+```noir
+use dep::std::ec::eddsa::verify_signature;
+
+fn verify_ed25519(
+    public_key: [u8; 32],
+    signature: [u8; 64],
+    message: [u8; 32]
+) -> bool {
+    verify_signature(public_key, signature, message)
+}
+```
+
+**Solana Application:**
+
+```noir
+// Prove: you control a wallet (via signature)
+// without revealing the actual wallet address
+
+fn prove_wallet_control(
+    wallet_pubkey: pub [u8; 32],
+    message: pub [u8; 32],
+    signature: [u8; 64],                    // Private
+    secret_nonce: [u8; 32],                 // Private
+) {
+    // Verify signature
+    assert(verify_ed25519(wallet_pubkey, signature, message));
+    
+    // Prove additional constraint without revealing secret
+    let hash = poseidon::hash_1([secret_nonce as Field]);
+    assert(hash == expected_commitment);
+}
+```
+
+### Array and Iteration
+
+```noir
+fn array_operations() {
+    let arr = [1, 2, 3, 4, 5];
+    
+    // Length
+    let len = arr.len();
+    
+    // Indexing
+    let first = arr[0];
+    
+    // Iteration
+    for i in 0..5 {
+        let element = arr[i];
+    }
+}
+```
+
+---
+
+## COMPILATION AND PROOF GENERATION
+
+### Compiling Circuits
+
+```bash
+# Compile circuit to ACIR
+nargo compile
+
+# Output:
+# target/my_circuit.acir          # Circuit bytecode
+# target/verification_key.json    # Verification key
+# target/my_circuit.wasm          # WASM for browser proof generation
+```
+
+### Proving Process
+
+```bash
+# Create inputs file
+cat > Prover.toml <<EOF
+x = "5"
+y = "7"
+EOF
+
+# Generate proof
+nargo prove
+
+# Output:
+# proofs/my_circuit.proof         # The zero-knowledge proof
+# proofs/my_circuit.witness       # Witness data (keep private)
+
+# Verify proof
+nargo verify
+```
+
+### WASM Compilation for Browser
+
+```bash
+# Install dependencies
+npm install @noir-lang/backend_barretenberg @noir-lang/noir_js
+
+# Compile to WASM
+nargo compile --include-keys
+
+# Browser usage (see Frontend Integration section)
+```
+
+---
+
+## ADVANCED PATTERNS
+
+### 1. PRIVATE VOTING
+
+**Use Case:** Vote on-chain without revealing identity
+
+```noir
+use dep::std::hash::poseidon::bn254::hash_1;
+
+fn vote(
+    voter_secret: [u8; 32],
+    domain: Field,                 // pub Field
+    vote_choice: Field,            // Private
+) -> pub Field {
+    // Generate nullifier (unique per voter per domain)
+    let nullifier = hash_1([
+        field_from_bytes(voter_secret),
+        domain
+    ]);
+    
+    // Constraints:
+    // 1. Voter has never voted before (nullifier not seen)
+    // 2. Vote is either 0 or 1
+    assert(vote_choice == 0 | vote_choice == 1);
+    
+    nullifier
+}
+```
+
+### 2. MERKLE TREE PROOFS
+
+**Use Case:** Prove NFT ownership without revealing identity
+
+```noir
+use dep::std::hash::poseidon::bn254::hash_2;
+
+fn merkle_proof(
+    leaf: Field,
+    index: Field,
+    path: [Field; 4],           // Path to root (4 levels deep)
+    root: pub Field,
+) {
+    let mut current = leaf;
+    
+    for i in 0..4 {
+        let sibling = path[i];
+        
+        // Reconstruct parent hash
+        if (index >> i) & 1 == 0 {
+            current = hash_2([current, sibling]);
+        } else {
+            current = hash_2([sibling, current]);
+        }
+    }
+    
+    // Verify we arrived at the root
+    assert(current == root);
+}
+```
+
+### 3. RANGE PROOFS
+
+**Use Case:** Prove value in range without revealing exact value
+
+```noir
+fn range_proof(value: Field, max: Field) -> pub bool {
+    // Proves: 0 <= value < max
+    
+    // Method: prove value * (value - 1) * ... * (value - max + 1) != 0
+    // and value >= 0 (via field properties)
+    
+    assert(value < max);
+    true
+}
+```
+
+### 4. NULLIFIER-BASED AUTHENTICATION
+
+```noir
+use dep::std::hash::poseidon::bn254::hash_3;
+
+fn generate_nullifier(
+    wallet: Field,
+    domain: Field,
+    secret: [u8; 32],
+) -> pub Field {
+    // Nullifier = hash(wallet, domain, secret)
+    // Properties:
+    // - Same wallet + domain = same nullifier
+    // - Different domain = different nullifier
+    // - Cannot reverse to get wallet/secret
+    
+    hash_3([
+        wallet,
+        domain,
+        field_from_bytes(secret)
+    ])
+}
+
+fn prove_nullifier_ownership(
+    wallet: Field,
+    domain: pub Field,
+    secret: [u8; 32],
+    nullifier: pub Field,
+) {
+    let computed = generate_nullifier(wallet, domain, secret);
+    assert(computed == nullifier);
+}
+```
+
+---
+
+## CONSTRAINT SYSTEM BEST PRACTICES
+
+### Constraint Minimization
+
+```noir
+// ❌ BAD: Creates many constraints
+fn inefficient(x: Field) -> Field {
+    let y = x * x * x * x * x;
+    y
+}
+
+// ✅ GOOD: Minimize constraints
+fn efficient(x: Field) -> Field {
+    let x2 = x * x;
+    let x4 = x2 * x2;
+    x4 * x
+}
+```
+
+### Avoid Expensive Operations
+
+```noir
+// ⚠️ EXPENSIVE: Division creates ~200 constraints
+let division = a / b;
+
+// ✅ BETTER: Pre-compute inverse if possible
+let inverse = field_inverse(b);
+let result = a * inverse;
+
+// ❌ VERY EXPENSIVE: Large exponentials
+let power = x ^ 1000000;
+
+// ✅ BETTER: Use bit-by-bit exponentiation
+let power = field_pow(x, 1000000);
+```
+
+### Type Constraints
+
+```noir
+// Types carry constraints
+let x: u8 = 10;     // Implicitly proves x < 256
+
+let y: u32 = 100;   // Implicitly proves y < 2^32
+
+// Can use for bounds proofs
+assert(value <= max_u8);  // Uses u8 type constraint
+```
+
+---
+
+## TESTING CIRCUITS
+
+### Unit Testing
+
+```noir
+#[cfg(test)]
+mod tests {
+    use crate::prove_auth;
+    
+    #[test]
+    fn test_valid_auth() {
+        let wallet = 12345;
+        let domain = 1;
+        let secret = [0; 32];
+        
+        // Should not panic
+        prove_auth(wallet, domain, secret);
+    }
+    
+    #[test]
+    #[should_panic]
+    fn test_invalid_auth() {
+        let wallet = 12345;
+        let domain = 1;
+        let secret = [1; 32];
+        
+        // Should fail assertion
+        prove_auth(wallet, domain, secret);
+    }
+}
+```
+
+### Integration Testing (Prover.toml)
+
+```toml
+# Prover.toml - Test inputs
+wallet = "12345"
+domain = "1"
+secret = "0x0000000000000000000000000000000000000000000000000000000000000000"
+```
+
+---
+
+## FRONTEND INTEGRATION (NoirJS)
+
+### Browser Proof Generation
+
+```typescript
+import { Noir } from "@noir-lang/noir_js";
+import { BarretenbergBackend } from "@noir-lang/backend_barretenberg";
+import circuit from "./path_to_compiled_circuit";
+
+async function generateProof(inputs: object) {
+    // Initialize backend and noir
+    const backend = new BarretenbergBackend();
+    const noir = new Noir(circuit);
+    
+    // Generate witness (private input processing)
+    const witness = await noir.generateWitness(inputs);
+    
+    // Create proof
+    const { proof, publicInputs } = await noir.generateProof(witness);
+    
+    return { proof, publicInputs };
+}
+```
+
+### Proof Verification (Browser)
+
+```typescript
+async function verifyProof(proof: ArrayBuffer, publicInputs: any) {
+    const backend = new BarretenbergBackend();
+    const noir = new Noir(circuit);
+    
+    const isValid = await noir.verifyProof({ proof, publicInputs });
+    return isValid;
+}
+```
+
+### Web Worker Integration (Prevent UI Blocking)
+
+```typescript
+// proof-worker.ts
+import { Noir } from "@noir-lang/noir_js";
+import { BarretenbergBackend } from "@noir-lang/backend_barretenberg";
+
+self.onmessage = async (event) => {
+    const { inputs } = event.data;
+    
+    try {
+        const backend = new BarretenbergBackend();
+        const noir = new Noir(circuit);
+        const witness = await noir.generateWitness(inputs);
+        const { proof, publicInputs } = await noir.generateProof(witness);
+        
+        self.postMessage({ success: true, proof, publicInputs });
+    } catch (error) {
+        self.postMessage({ success: false, error: error.message });
+    }
+};
+```
+
+---
+
+## COMMON ISSUES & SOLUTIONS
+
+### Issue: Constraint Overflow
+**Problem:** Circuit exceeds safe constraint limits
+**Solution:** Break circuit into smaller functions, pre-compute values
+
+### Issue: Type Mismatch
+**Problem:** Field vs u8/u32 type errors
+**Solution:** Explicit type casting: `field_from_bytes()`, `bytes_from_field()`
+
+### Issue: Slow Proof Generation
+**Problem:** Proving takes >5 seconds
+**Solution:** Minimize operations, use efficient hash functions (Poseidon), implement caching
+
+### Issue: Memory Issues
+**Problem:** Large arrays cause out-of-memory errors
+**Solution:** Use smaller array sizes, split into recursive proofs
+
+---
+
+## VERIFICATION KEY GENERATION FOR SOLANA
+
+### Export Verifier for Solana
+
+```bash
+# After compilation
+nargo compile --include-keys
+
+# Extract verification key
+cat target/verification_key.json
+```
+
+### Format for Groth16 Solana Verifier
+
+```json
+{
+  "n": "...",                    // Verifying key components
+  "alpha": "...",
+  "beta": "...",
+  "delta": "...",
+  "gamma_abc": [...]
+}
+```
+
+---
+
+## RESOURCES & DOCUMENTATION
+
+### Official Documentation
+- **Getting Started:** https://noir-lang.org/docs/getting_started/quick_start
+- **Language Reference:** https://noir-lang.org/docs/language_reference/
+- **Standard Library:** https://noir-lang.org/docs/standard_library/
+- **Noir Examples:** https://github.com/noir-lang/noir-examples
+
+### Key Tutorials
+- **Private Voting:** https://noir-lang.org/docs/tutorials/voting
+- **Merkle Proofs:** https://noir-lang.org/docs/tutorials/merkle_proof
+- **Authentication:** https://noir-lang.org/docs/tutorials/noirjs_app
+
+### Community
+- **Discord:** https://discord.gg/aztec
+- **GitHub Discussions:** https://github.com/noir-lang/noir/discussions
+- **Stack Overflow:** Tag: `noir-lang`
+
+### ZK Background
+- **ZK Whiteboard Sessions:** https://www.youtube.com/playlist?list=PLcPzhzreTe2i9Y1FhLfKWc4RvTv6iMhJx
+- **zkIntro:** https://zkintro.com/articles/programming-zkps-from-zero-to-hero
+
+---
+
+## PROVING BACKENDS
+
+### Barretenberg (Default)
+- **Use:** Most circuits, best documentation
+- **Proof Size:** ~256 bytes (Groth16)
+- **Verification:** <200,000 CU on Solana
+
+### Halo2
+- **Use:** Trustless verification (no trusted setup)
+- **Proof Size:** Larger than Groth16
+- **Verification:** Slower but no setup required
+
+### Plonky2
+- **Use:** Recursive proofs
+- **Proof Size:** Small with recursion
+- **Verification:** Optimized for recursion
+
+---
+
+## PERFORMANCE METRICS (2025)
+
+| Operation | Constraints | Time (Barretenberg) |
+|-----------|------------|----------------------|
+| Poseidon Hash | ~50 | <1ms |
+| SHA-256 | ~1,600 | ~5ms |
+| Ed25519 Verify | ~2,500 | ~10ms |
+| Merkle 4-level | ~200 | ~2ms |
+| Range Proof (256-bit) | ~256 | ~1ms |
+
+**Browser Generation Times:**
+- Simple circuits: 0.5-2 seconds
+- Medium circuits: 2-5 seconds
+- Complex circuits: 5-15 seconds
+
+---
+
+## SECURITY CONSIDERATIONS
+
+### What Noir Guarantees
+✅ Correctness: Proof cannot exist for false statements (assuming sound proving system)
+✅ Privacy: Verifier learns nothing beyond the proven statement
+✅ Succinctness: Proof size independent of circuit size
+
+### What Noir Does NOT Guarantee
+❌ Protection against side-channel attacks
+❌ Protection against weak randomness
+❌ Undiscovered cryptographic breaks
+
+### Best Practices
+1. **Use Audited Circuits:** Proven by security experts
+2. **Test Thoroughly:** Unit tests for all edge cases
+3. **Minimize Private Inputs:** Reduce attack surface
+4. **Use Strong Randomness:** Never use weak entropy
+5. **Update Regularly:** Apply security patches
+
+---
+
+## NEXT STEPS FOR VEILED
+
+1. **Start:** https://noir-lang.org/docs/getting_started/hello_world
+2. **Learn:** Build private voting circuit (see examples)
+3. **Integrate:** Add nullifier-based authentication
+4. **Test:** Deploy to devnet with Anchor
+5. **Optimize:** Profile and reduce constraints
+6. **Audit:** Have circuits reviewed by security experts
+
+---
+
+**Version:** 1.0  
+**Last Updated:** January 2026  
+**Maintainer:** Aztec Labs  
+**License:** Open Source (MIT/Apache 2.0)
