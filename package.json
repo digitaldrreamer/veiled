@@ -1,0 +1,13 @@
+{
+  "name": "veiled",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "bun --filter './apps/demo' dev",
+    "build": "bun --filter './packages/*' run build && bun --filter './apps/*' run build",
+    "test": "bun test"
+  }
+}

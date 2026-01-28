@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Extract Verification Key</title>
+    <script type="module">
+        import { BarretenbergBackend } from 'https://cdn.jsdelivr.net/npm/@noir-lang/backend_barretenberg@0.36.0/+esm';
+        import { Noir } from 'https://cdn.jsdelivr.net/npm/@noir-lang/noir_js@1.0.0-beta.18/+esm';
+
+        async function extractVK() {
+            const output = document.getElementById('output');
+            output.textContent = 'Loading circuit...\n';
+
+            try {
+                // Load circuit
+                const response = await fetch('/circuit/veiled_circuit.json');
+                if (!response.ok) {
+                    throw new Error(`Failed to load circuit: ${response.statusText}`);
+                }
+                const circuitData = await response.json();
+                output.textContent += 'Circuit loaded. Initializing backend...\n';
+
+                // Initialize backend
+                const backend = new BarretenbergBackend(circuitData);
+                const noir = new Noir(circuitData);
+                output.textContent += 'Backend initialized. Generating proof to warm up backend...\n';
+
+                // Generate a proof FIRST to initialize backend properly
+                const testInputs = {
+                    wallet_secret_key: Array(32).fill(1),
+                    random_secret: '0x1',
+                    wallet_pubkey_hash: '0x1',
+                    domain_hash: '0x1',
+                    nullifier: '0x1',
+                };
+
+                const witness = await noir.generateWitness(testInputs);
+                const { proof } = await backend.generateProof(witness);
+                output.textContent += 'Proof generated. Now extracting verification key...\n';
+
+                // Wait a bit for backend to be ready
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // NOW try to get verification key
+                const vk = await backend.getVerificationKey();
+                output.textContent += `✅ Verification key extracted! (${vk.length} bytes)\n\n`;
+
+                // Convert to hex for display
+                const hexString = Array.from(vk)
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+                output.textContent += `First 100 bytes (hex):\n${hexString.substring(0, 200)}...\n\n`;
+
+                // Create download
+                const blob = new Blob([vk], { type: 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'verification_key.bin';
+                a.textContent = 'Download verification_key.bin';
+                a.style.display = 'block';
+                a.style.marginTop = '16px';
+                a.style.padding = '12px';
+                a.style.background = '#000';
+                a.style.color = 'white';
+                a.style.textDecoration = 'none';
+                a.style.borderRadius = '8px';
+                a.style.textAlign = 'center';
+                document.body.appendChild(a);
+
+                output.textContent += '\n✅ SUCCESS! Click the download button above.';
+            } catch (error) {
+                output.textContent += `\n❌ Error: ${error.message}\n${error.stack}`;
+            }
+        }
+
+        // Auto-run on load
+        window.addEventListener('load', extractVK);
+    </script>
+</head>
+<body style="font-family: monospace; padding: 20px; max-width: 800px; margin: 0 auto;">
+    <h1>Verification Key Extractor</h1>
+    <pre id="output" style="background: #f5f5f5; padding: 20px; border-radius: 8px; white-space: pre-wrap;"></pre>
+</body>
+</html>
