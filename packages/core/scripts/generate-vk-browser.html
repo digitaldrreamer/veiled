@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Verification Key</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            background: #000;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover { background: #333; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        pre {
+            background: #f5f5f5;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .status { margin: 20px 0; padding: 12px; border-radius: 8px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>🔑 Generate Verification Key</h1>
+    <p>This tool extracts the verification key from your compiled Noir circuit.</p>
+    
+    <div>
+        <button id="generateBtn" onclick="generateKey()">Generate Verification Key</button>
+    </div>
+    
+    <div id="status"></div>
+    <pre id="output"></pre>
+
+    <script type="module">
+        import { BarretenbergBackend } from '../../node_modules/@noir-lang/backend_barretenberg/lib/esm/index.js';
+
+        window.generateKey = async function() {
+            const btn = document.getElementById('generateBtn');
+            const status = document.getElementById('status');
+            const output = document.getElementById('output');
+            
+            btn.disabled = true;
+            status.innerHTML = '<div class="status info">Loading circuit...</div>';
+            output.textContent = '';
+
+            try {
+                // Load circuit
+                const response = await fetch('/circuit/veiled_circuit.json');
+                if (!response.ok) {
+                    throw new Error(`Failed to load circuit: ${response.statusText}`);
+                }
+                const circuitData = await response.json();
+                
+                status.innerHTML = '<div class="status info">Initializing backend...</div>';
+                
+                // Initialize backend
+                const backend = new BarretenbergBackend(circuitData);
+                
+                status.innerHTML = '<div class="status info">Extracting verification key...</div>';
+                
+                // Get verification key
+                const verificationKey = await backend.getVerificationKey();
+                
+                // Convert to hex string
+                const hexString = Array.from(verificationKey)
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+                
+                // Display results
+                output.textContent = `Verification Key (${verificationKey.length} bytes):\n\n${hexString}`;
+                
+                // Create download link
+                const blob = new Blob([verificationKey], { type: 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'verification_key.bin';
+                a.textContent = 'Download verification_key.bin';
+                a.style.display = 'block';
+                a.style.marginTop = '16px';
+                a.style.padding = '12px';
+                a.style.background = '#000';
+                a.style.color = 'white';
+                a.style.textDecoration = 'none';
+                a.style.borderRadius = '8px';
+                a.style.textAlign = 'center';
+                status.appendChild(a);
+                
+                status.innerHTML += '<div class="status success">✅ Verification key generated! Click the download link above.</div>';
+                
+                // Cleanup
+                await backend.destroy();
+            } catch (error) {
+                status.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+                output.textContent = error.stack;
+            } finally {
+                btn.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>
