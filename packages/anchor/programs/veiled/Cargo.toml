@@ -1,0 +1,56 @@
+[package]
+name = "veiled"
+version = "0.1.0"
+description = "Privacy-preserving authentication on Solana using zero-knowledge proofs"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "veiled"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+
+# * IDL generation feature (pulls in anchor-lang-idl, which depends on regex)
+# * DO NOT enable this for on-chain SBF builds to avoid regex_automata stack issues.
+# * Use it only when running IDL tooling explicitly (e.g. anchor idl build).
+idl-build = ["anchor-lang/idl-build"]
+
+# * Default on-chain build features (no idl-build => no regex on SBF)
+default = []
+
+[dependencies]
+# * Using git dependencies to work around anchor-syn-0.32.1 local_file() bug
+# * All anchor crates patched from same git source for version consistency
+anchor-lang = { git = "https://github.com/coral-xyz/anchor", branch = "master", features = ["init-if-needed"] }
+# * Disable default features to avoid pulling in spl-token-metadata-interface
+# * Only enable classic SPL Token features (not Token-2022)
+# * token_2022 would pull in spl-token-2022-interface -> spl-token-metadata-interface
+# * Note: We don't enable idl-build here since we removed anchor-spl/idl-build from program features
+anchor-spl = { git = "https://github.com/coral-xyz/anchor", branch = "master", default-features = false, features = ["token", "associated_token"] }
+
+# Serialization for verification result parsing
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+hex = "0.4"
+
+# * Instruction introspection sysvar helpers
+# * Required for load_current_index_checked and load_instruction_at_checked
+# * Anchor 0.32+ uses split Solana crates, so these are in a separate crate
+solana-instructions-sysvar = "3.0.0"
+
+# * Workaround: Rust/Cargo 1.84 (Solana/Anchor toolchain) cannot build crates that
+# * opt into the unstable `edition2024` cargo feature. Newer releases of
+# * `constant_time_eq` started requiring it, so we patch in a vendored copy.
+[patch.crates-io]
+constant_time_eq = { path = "../../vendor/constant_time_eq" }
+blake3 = { path = "../../vendor/blake3" }
+# * Fix: anchor-syn-0.32.1 has a bug with local_file() on proc_macro::Span
+# * Patch ALL anchor crates from git to ensure version consistency
+# * This ensures anchor-syn, anchor-lang, and all anchor-* crates are compatible
+anchor-syn = { git = "https://github.com/coral-xyz/anchor", branch = "master" }
+anchor-lang = { git = "https://github.com/coral-xyz/anchor", branch = "master" }
+anchor-spl = { git = "https://github.com/coral-xyz/anchor", branch = "master" }

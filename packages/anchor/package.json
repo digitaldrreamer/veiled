@@ -1,0 +1,24 @@
+{
+    "name": "@veiled/anchor",
+    "version": "0.1.0",
+    "description": "Solana Anchor program for Veiled ZK proof verification",
+    "type": "module",
+    "scripts": {
+        "build": "cd programs/veiled && ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo build-sbf",
+        "check": "cd programs/veiled && ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo check",
+        "test": "bun test tests/*.ts",
+        "lint": "cd programs/veiled && ~/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo clippy"
+    },
+    "devDependencies": {
+        "@coral-xyz/anchor": "^0.32.1",
+        "@solana/web3.js": "^1.95.4",
+        "tweetnacl": "^1.0.3",
+        "@types/bun": "latest",
+        "chai": "^4.3.10",
+        "@types/chai": "^4.3.11",
+        "mocha": "^10.2.0",
+        "@types/mocha": "^10.0.6",
+        "ts-mocha": "^10.0.2",
+        "typescript": "^5.3.3"
+    }
+}
