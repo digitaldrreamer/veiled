@@ -1,0 +1,86 @@
+{
+  "version": "0.1.0",
+  "name": "veiled",
+  "instructions": [
+    {
+      "name": "verifyAuth",
+      "accounts": [
+        {
+          "name": "nullifierAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "proof",
+          "type": "bytes"
+        },
+        {
+          "name": "publicInputs",
+          "type": "bytes"
+        },
+        {
+          "name": "nullifier",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "domain",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "NullifierAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nullifier",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "domain",
+            "type": "string"
+          },
+          {
+            "name": "createdAt",
+            "type": "i64"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "DomainTooLong",
+      "msg": "Domain string exceeds maximum length of 255 characters"
+    }
+  ],
+  "metadata": {
+    "address": "Fg6PaFpoGXkYsidMpWxTWqSGobuGUfnmenKc4VSwtr8P"
+  }
+}
