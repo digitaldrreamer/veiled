@@ -1,0 +1,8 @@
+[package]
+name = "veiled_circuit"
+type = "bin"
+authors = ["Veiled Team"]
+compiler_version = ">=0.23.0"
+
+[dependencies]
+# Standard library is built-in, no need to add as dependency

@@ -1,0 +1,6 @@
+[package]
+name = "test_execute"
+type = "bin"
+authors = [""]
+
+[dependencies]

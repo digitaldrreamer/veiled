@@ -1,0 +1,6 @@
+[main]
+wallet_secret_key = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32]
+random_secret = "0x1"
+wallet_pubkey_hash = "0x70e151c232a31383f464d545b626970777e858c939aa1a8afb6bdc4cbd2d9ed"
+domain_hash = "0x5"
+nullifier = "0x27f3bf8b5722eeba86521de9b5814d18e4b07c4813dfab77430edaa6723f0aa"

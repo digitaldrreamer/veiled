@@ -1,0 +1,11 @@
+# Noir build artifacts
+target/
+proofs/
+contracts/
+
+# Prover inputs (may contain secrets)
+Prover.toml.local
+
+# IDE
+.idea/
+.vscode/
