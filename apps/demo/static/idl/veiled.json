@@ -1,33 +1,239 @@
 {
-  "version": "0.1.0",
-  "name": "veiled",
+  "address": "H6apEGZAw23AKUeqCX41wkDv2LVwX3Ec8oYPip7k3xzA",
+  "metadata": {
+    "name": "veiled",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Privacy-preserving authentication on Solana using zero-knowledge proofs"
+  },
   "instructions": [
     {
-      "name": "verifyAuth",
+      "name": "grant_permissions",
+      "docs": [
+        "* Grant permissions to an app",
+        "* Creates a PermissionGrant account that stores what permissions were granted"
+      ],
+      "discriminator": [
+        229,
+        213,
+        34,
+        13,
+        171,
+        239,
+        162,
+        71
+      ],
       "accounts": [
         {
-          "name": "nullifierAccount",
-          "isMut": true,
-          "isSigner": false
+          "name": "permission_grant",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  101,
+                  114,
+                  109,
+                  105,
+                  115,
+                  115,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "nullifier"
+              },
+              {
+                "kind": "arg",
+                "path": "app_id"
+              }
+            ]
+          }
         },
         {
-          "name": "authority",
-          "isMut": true,
-          "isSigner": true
+          "name": "payer",
+          "writable": true,
+          "signer": true
         },
         {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
         {
-          "name": "proof",
-          "type": "bytes"
+          "name": "nullifier",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
         },
         {
-          "name": "publicInputs",
+          "name": "app_id",
+          "type": "pubkey"
+        },
+        {
+          "name": "permissions",
+          "type": {
+            "vec": {
+              "defined": {
+                "name": "Permission"
+              }
+            }
+          }
+        },
+        {
+          "name": "expires_in",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "log_permission_access",
+      "docs": [
+        "* Log when a permission is actually accessed",
+        "* Creates an audit trail entry in PermissionAccess account"
+      ],
+      "discriminator": [
+        177,
+        118,
+        71,
+        15,
+        220,
+        48,
+        197,
+        199
+      ],
+      "accounts": [
+        {
+          "name": "permission_access",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "permission_grant"
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "permission_used",
+          "type": {
+            "defined": {
+              "name": "Permission"
+            }
+          }
+        },
+        {
+          "name": "metadata",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "revoke_permissions",
+      "docs": [
+        "* Revoke previously granted permissions",
+        "* Marks the PermissionGrant as revoked"
+      ],
+      "discriminator": [
+        115,
+        59,
+        136,
+        227,
+        198,
+        42,
+        189,
+        236
+      ],
+      "accounts": [
+        {
+          "name": "permission_grant",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "docs": [
+            "* Authority must be the payer (user who granted permissions)",
+            "* In practice, this should be verified via nullifier ownership proof",
+            "* For now, we allow any signer to revoke (can be tightened later)"
+          ],
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "verify_auth",
+      "discriminator": [
+        184,
+        209,
+        18,
+        17,
+        66,
+        245,
+        80,
+        76
+      ],
+      "accounts": [
+        {
+          "name": "nullifier_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  110,
+                  117,
+                  108,
+                  108,
+                  105,
+                  102,
+                  105,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "nullifier"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "instructions_sysvar",
+          "address": "Sysvar1nstructions1111111111111111111111111"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "verification_result",
           "type": "bytes"
         },
         {
@@ -41,12 +247,196 @@
         },
         {
           "name": "domain",
-          "type": "string"
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
         }
       ]
     }
   ],
   "accounts": [
+    {
+      "name": "NullifierAccount",
+      "discriminator": [
+        250,
+        31,
+        238,
+        177,
+        213,
+        98,
+        48,
+        172
+      ]
+    },
+    {
+      "name": "PermissionAccess",
+      "discriminator": [
+        31,
+        40,
+        88,
+        182,
+        105,
+        142,
+        232,
+        36
+      ]
+    },
+    {
+      "name": "PermissionGrant",
+      "discriminator": [
+        224,
+        114,
+        132,
+        200,
+        84,
+        176,
+        71,
+        71
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "PermissionAccessedEvent",
+      "discriminator": [
+        131,
+        165,
+        107,
+        207,
+        58,
+        198,
+        121,
+        50
+      ]
+    },
+    {
+      "name": "PermissionGrantedEvent",
+      "discriminator": [
+        209,
+        124,
+        214,
+        185,
+        117,
+        152,
+        192,
+        29
+      ]
+    },
+    {
+      "name": "PermissionRevokedEvent",
+      "discriminator": [
+        237,
+        195,
+        120,
+        61,
+        46,
+        58,
+        245,
+        198
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidProof",
+      "msg": "Invalid proof"
+    },
+    {
+      "code": 6001,
+      "name": "DuplicateNullifier",
+      "msg": "Nullifier already used"
+    },
+    {
+      "code": 6002,
+      "name": "ProofExpired",
+      "msg": "Proof expired"
+    },
+    {
+      "code": 6003,
+      "name": "DomainTooLong",
+      "msg": "Domain string exceeds maximum length of 255 characters"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidPublicInputs",
+      "msg": "Invalid public inputs"
+    },
+    {
+      "code": 6005,
+      "name": "OffsetMismatch",
+      "msg": "Offset mismatch - points to wrong instruction"
+    },
+    {
+      "code": 6006,
+      "name": "InvalidInstructionData",
+      "msg": "Invalid instruction data"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidSignatureCount",
+      "msg": "Invalid signature count"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidMessageSize",
+      "msg": "Invalid message size"
+    },
+    {
+      "code": 6009,
+      "name": "ProofHashMismatch",
+      "msg": "Proof hash mismatch"
+    },
+    {
+      "code": 6010,
+      "name": "IsValidMismatch",
+      "msg": "Is valid mismatch"
+    },
+    {
+      "code": 6011,
+      "name": "AuthorityMismatch",
+      "msg": "Authority public key mismatch"
+    },
+    {
+      "code": 6012,
+      "name": "BadEd25519Program",
+      "msg": "Expected Ed25519 program"
+    },
+    {
+      "code": 6013,
+      "name": "BadEd25519Accounts",
+      "msg": "Bad Ed25519 accounts"
+    },
+    {
+      "code": 6014,
+      "name": "PermissionRevoked",
+      "msg": "Permission has been revoked"
+    },
+    {
+      "code": 6015,
+      "name": "PermissionExpired",
+      "msg": "Permission has expired"
+    },
+    {
+      "code": 6016,
+      "name": "PermissionNotGranted",
+      "msg": "Permission not granted"
+    },
+    {
+      "code": 6017,
+      "name": "UnauthorizedRevocation",
+      "msg": "Unauthorized to revoke this permission"
+    },
+    {
+      "code": 6018,
+      "name": "TooManyPermissions",
+      "msg": "Too many permissions requested"
+    }
+  ],
+  "types": [
     {
       "name": "NullifierAccount",
       "type": {
@@ -66,21 +456,255 @@
             "type": "string"
           },
           {
-            "name": "createdAt",
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "expires_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Permission",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "RevealWalletAddress"
+          },
+          {
+            "name": "RevealExactBalance"
+          },
+          {
+            "name": "RevealTokenBalances"
+          },
+          {
+            "name": "RevealNFTList"
+          },
+          {
+            "name": "RevealTransactionHistory"
+          },
+          {
+            "name": "RevealStakingPositions"
+          },
+          {
+            "name": "RevealDeFiPositions"
+          },
+          {
+            "name": "SignTransactions"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PermissionAccess",
+      "docs": [
+        "* Track every permission access (audit log)"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "permission_grant",
+            "docs": [
+              "* Which permission grant this refers to"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "accessed_at",
+            "docs": [
+              "* When it was accessed"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "permission_used",
+            "docs": [
+              "* Which permission was used"
+            ],
+            "type": {
+              "defined": {
+                "name": "Permission"
+              }
+            }
+          },
+          {
+            "name": "metadata",
+            "docs": [
+              "* Optional: What data was accessed"
+            ],
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PermissionAccessedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nullifier",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "app_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "permission",
+            "type": {
+              "defined": {
+                "name": "Permission"
+              }
+            }
+          },
+          {
+            "name": "accessed_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PermissionGrant",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nullifier",
+            "docs": [
+              "* User's nullifier (anonymous ID)"
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "app_id",
+            "docs": [
+              "* Which app requested this"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "permissions",
+            "docs": [
+              "* What permissions were granted"
+            ],
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "Permission"
+                }
+              }
+            }
+          },
+          {
+            "name": "granted_at",
+            "docs": [
+              "* When permission was granted"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "expires_at",
+            "docs": [
+              "* When permission expires"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "revoked",
+            "docs": [
+              "* User can revoke anytime"
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "* PDA bump"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PermissionGrantedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nullifier",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "app_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "permissions",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "Permission"
+                }
+              }
+            }
+          },
+          {
+            "name": "granted_at",
+            "type": "i64"
+          },
+          {
+            "name": "expires_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PermissionRevokedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nullifier",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "app_id",
+            "type": "pubkey"
+          },
+          {
+            "name": "revoked_at",
             "type": "i64"
           }
         ]
       }
     }
-  ],
-  "errors": [
-    {
-      "code": 6000,
-      "name": "DomainTooLong",
-      "msg": "Domain string exceeds maximum length of 255 characters"
-    }
-  ],
-  "metadata": {
-    "address": "Fg6PaFpoGXkYsidMpWxTWqSGobuGUfnmenKc4VSwtr8P"
-  }
+  ]
 }

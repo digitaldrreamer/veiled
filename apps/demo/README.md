@@ -1,42 +1,121 @@
-# sv
+# Veiled Demo App
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+NFT-gated chat demo application showcasing Veiled's privacy-preserving authentication.
 
-## Creating a project
+## Overview
 
-If you're seeing this, you've probably already done this step. Congrats!
+This demo application demonstrates how Veiled enables NFT-gated access without revealing which specific NFT a user owns. Users can join chat rooms by proving they own an NFT from a collection, while their wallet address remains hidden.
 
-```sh
-# create a new project
-npx sv create my-app
+## Features
+
+- **NFT-Gated Access**: Prove NFT ownership without revealing which NFT
+- **Private Authentication**: Wallet address never exposed to the chat
+- **Real-Time Chat**: WebSocket-based chat functionality
+- **Visual Comparison**: Side-by-side comparison of normal auth vs Veiled
+
+## Development
+
+### Prerequisites
+
+- Bun v1.2+
+- Solana wallet with devnet SOL
+- NFT collection on devnet (use `bun run mint-devnet-nft` to create one)
+
+### Setup
+
+```bash
+# Install dependencies
+bun install
+
+# Set up environment
+cp .env.example .env
+# Edit .env with your RPC provider and API keys
+
+# Start development server
+bun run dev
 ```
 
-To recreate this project with the same configuration:
+The app will be available at `http://localhost:5173`
 
-```sh
-# recreate this project
-bun x sv create --template minimal --types ts --add prettier eslint tailwindcss="plugins:typography,forms" sveltekit-adapter="adapter:vercel" --install bun .
+### Environment Variables
+
+```env
+VITE_SOLANA_RPC_URL=https://api.devnet.solana.com
+VITE_HELIUS_API_KEY=your_helius_key_here
+VITE_PROGRAM_ID=your_program_id_here
 ```
 
-## Developing
+## Usage
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+1. **Connect Wallet**: Use Phantom, Backpack, or Solflare
+2. **Select NFT Collection**: Choose which collection to gate access by
+3. **Generate Proof**: Veiled generates a ZK proof (takes ~5 seconds)
+4. **Join Chat**: If proof is valid, you can join the chat room
+5. **See Privacy**: Notice that the chat only sees your nullifier, not your wallet address
 
-```sh
-npm run dev
+## Project Structure
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+```
+apps/demo/
+├── src/
+│   ├── routes/          # SvelteKit routes
+│   │   ├── +page.svelte # Main demo page
+│   │   └── ...
+│   ├── lib/             # Shared utilities
+│   └── ...
+├── static/
+│   ├── idl/             # Anchor program IDL
+│   └── circuit/          # Compiled Noir circuits
+└── ...
 ```
 
 ## Building
 
-To create a production version of your app:
+```bash
+# Production build
+bun run build
 
-```sh
-npm run build
+# Preview production build
+bun run preview
 ```
 
-You can preview the production build with `npm run preview`.
+## Deployment
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+The demo is configured to deploy to Vercel:
+
+```bash
+# Deploy to Vercel
+vercel deploy
+```
+
+## Testing
+
+```bash
+# Run tests
+bun test
+
+# Run with coverage
+bun test --coverage
+```
+
+## Troubleshooting
+
+### "Wallet not connected"
+- Ensure you have a Solana wallet extension installed
+- Check that the wallet is connected to devnet
+
+### "Proof generation failed"
+- Check that the circuit is compiled: `cd packages/circuit && nargo compile`
+- Ensure the circuit JSON is in `static/circuit/`
+- Check browser console for errors
+
+### "NFT not found"
+- Ensure you own an NFT from the selected collection
+- Use `bun run mint-devnet-nft` to create a test NFT
+- Check that the collection address is correct
+
+## Learn More
+
+- [Main README](../../README.md)
+- [Core SDK](../../packages/core/README.md)
+- [Circuit Documentation](../../packages/circuit/README.md)
