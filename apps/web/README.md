@@ -1,42 +1,63 @@
-# sv
+# Veiled Web App
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Landing page and marketing site for Veiled.
 
-## Creating a project
+## Overview
 
-If you're seeing this, you've probably already done this step. Congrats!
+This is the public-facing website for Veiled, providing information about the project, documentation, and links to the demo application.
 
-```sh
-# create a new project
-npx sv create my-app
+## Development
+
+### Setup
+
+```bash
+# Install dependencies
+bun install
+
+# Start development server
+bun run dev
 ```
 
-To recreate this project with the same configuration:
+The site will be available at `http://localhost:5173`
 
-```sh
-# recreate this project
-bun x sv create --template minimal --types ts --add prettier eslint vitest="usages:unit,component" playwright tailwindcss="plugins:typography,forms" sveltekit-adapter="adapter:node" mcp="ide:cursor+setup:remote" --install bun .
+### Building
+
+```bash
+# Production build
+bun run build
+
+# Preview production build
+bun run preview
 ```
 
-## Developing
+## Deployment
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+The web app is configured to deploy to Vercel:
 
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+```bash
+# Deploy to Vercel
+vercel deploy
 ```
 
-## Building
+## Project Structure
 
-To create a production version of your app:
-
-```sh
-npm run build
+```
+apps/web/
+├── src/
+│   ├── routes/          # SvelteKit routes
+│   ├── lib/             # Shared components and utilities
+│   └── ...
+└── ...
 ```
 
-You can preview the production build with `npm run preview`.
+## Features
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+- Landing page with project overview
+- Documentation sections
+- Links to demo and GitHub
+- Responsive design
+
+## Learn More
+
+- [Main README](../../README.md)
+- [About Veiled](../../ABOUT.md)
