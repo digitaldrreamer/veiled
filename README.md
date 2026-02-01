@@ -54,10 +54,6 @@ Every sign-in exposes your financial identity, making you:
 
 **Figure 1.2:** With Veiled, dApps only see an anonymous ID instead of your wallet address.
 
-> **📸 Screenshot needed:** Side-by-side comparison showing:
-> - Left: Traditional auth with wallet address, balance, NFTs, transaction history visible
-> - Right: Veiled auth with all data hidden, showing only anonymous ID and privacy score
-
 ---
 
 ## Data Exposure Comparison
@@ -215,10 +211,6 @@ const session = await veiled.signIn({
 
 **Figure 2:** NFT-gated access with privacy. Prove ownership without revealing your specific token or other holdings.
 
-> **📸 Screenshot needed:** Discord channel showing:
-> - Traditional auth: Bot sees DeGod #1234, all other NFTs, wallet balance
-> - Veiled auth: Bot sees "User owns a DeGod" but cannot see which one or other holdings
-
 ```typescript
 // ❌ Traditional: Exposes everything
 const { publicKey } = useWallet();
@@ -251,10 +243,6 @@ await veiled.signIn({
 
 **Figure 3:** Balance verification with selective disclosure. Prove you meet requirements without revealing exact holdings.
 
-> **📸 Screenshot needed:** Lending protocol showing:
-> - Traditional auth: "You have: 45.67 SOL" - protocol sees exact balance, adjusts rates
-> - Veiled auth: "Verified: Balance in range 10-100 SOL" - protocol sees qualification only
-
 ```typescript
 // ❌ Traditional: Reveals everything
 const balance = await connection.getBalance(publicKey);
@@ -284,10 +272,6 @@ await veiled.signIn({
 ![Anonymous DAO Voting Example](resources/anonymous-dao-voting.png)
 
 **Figure 4:** Anonymous governance voting. Prove eligibility without revealing identity or how you voted.
-
-> **📸 Screenshot needed:** DAO proposal page showing:
-> - Traditional auth: "Wallet: 7xKXtg2CW... voted YES" - everyone knows who voted
-> - Veiled auth: "veiled_7a3b... voted YES" - anonymous vote counted, cannot trace to wallet
 
 ```typescript
 // ❌ Traditional: Reveals voter identity
@@ -342,12 +326,6 @@ Veiled supports an OAuth-like permission system that lets users control what inf
 
 **Figure 5:** Permission request modal showing privacy impact. Users see exactly what they're sharing and can deny while still using the app.
 
-> **📸 Screenshot needed:** Modal showing:
-> - Permission request: "See your wallet address" (HIGH risk)
-> - Privacy impact: 10/10 → 2/10
-> - Warning about what app can do
-> - Deny/Allow buttons
-
 ```typescript
 // Default: Maximum privacy (nothing revealed)
 const session = await veiled.signIn({
@@ -374,21 +352,9 @@ const session = await veiled.signIn({
 
 **Figure 6:** Active session with granted permissions. Users can see what data is exposed and revoke access at any time.
 
-> **📸 Screenshot needed:** Session view showing:
-> - Active permissions list
-> - Privacy status indicator
-> - What app can currently do
-> - Revoke/Sign Out buttons
-
 ![Progressive Permissions](resources/privacy-with-flexibility.png)
 
 **Figure 7:** Progressive permissions for sensitive operations. Transaction signing doesn't compromise privacy, shown with clear risk assessment.
-
-> **📸 Screenshot needed:** Transaction confirmation showing:
-> - Additional permission request for transaction signing
-> - Risk level (CRITICAL)
-> - Privacy impact (no change for signing)
-> - Single-use scope
 
 **Available Permissions:**
 - `reveal_wallet_address` - Show wallet address (HIGH risk)
@@ -1101,7 +1067,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for gu
 
 ### Responsible Disclosure
 
-If you discover a security vulnerability, please email security@veiled.sh (DO NOT open a public issue).
+If you discover a security vulnerability, please contact us through GitHub (DO NOT open a public issue).
 
 ### Audit Status
 
@@ -1146,7 +1112,6 @@ Special thanks to:
 
 - **Twitter**: [@VeiledAuth](https://twitter.com/VeiledAuth) (coming soon)
 - **Discord**: [Join our Discord](https://discord.gg/veiled) (coming soon)
-- **Email**: hello@veiled.sh
 - **Website**: [veiled.sh](https://veiled.sh) (veiled.vercel.app for now)
 
 ---
