@@ -305,12 +305,14 @@ async function initializeNoir(
     
     try {
       // * UltraHonkBackend expects bytecode as base64 string (it handles decompression internally)
-      // * If bytecode is already an array, we need to convert it back to base64
+      // * The bytecode from nargo compile is already base64-encoded and gzip-compressed
+      // * Pass it directly to UltraHonkBackend - it will handle deserialization
       let bytecodeString: string;
       // #region agent log
       fetch('http://127.0.0.1:7253/ingest/7771b592-8da6-468a-80be-e69122580b2d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'generator.ts:327',message:'BEFORE_BYTECODE_CONVERSION',data:{bytecodeType:typeof circuitData.bytecode,bytecodeIsArray:Array.isArray(circuitData.bytecode),bytecodeLength:circuitData.bytecode?.length,circuitType},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
       // #endregion
       if (typeof circuitData.bytecode === 'string') {
+        // * Bytecode is already base64 string - use as-is
         bytecodeString = circuitData.bytecode;
         // #region agent log
         fetch('http://127.0.0.1:7253/ingest/7771b592-8da6-468a-80be-e69122580b2d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'generator.ts:330',message:'BYTECODE_IS_STRING',data:{bytecodeLength:bytecodeString.length,firstChars:bytecodeString.substring(0,20),circuitType},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
@@ -333,11 +335,20 @@ async function initializeNoir(
         throw new Error('Circuit bytecode must be a string or array');
       }
       
+      // * CRITICAL: UltraHonkBackend constructor may fail if circuit format doesn't match ACVM_JS version
+      // * Ensure nargo version matches @noir-lang/acvm_js version (both should be 1.0.0-beta.3)
       const backendOptions: BackendOptions = { threads: 1 };
       const circuitOptions: CircuitOptions = { recursive: false };
       
+      console.log('🔵 [VEILED] Creating UltraHonkBackend with bytecode:', {
+        bytecodeLength: bytecodeString.length,
+        firstChars: bytecodeString.substring(0, 30),
+        circuitType,
+        noirVersion: circuitData.noir_version
+      });
+      
       // #region agent log
-      fetch('http://127.0.0.1:7253/ingest/7771b592-8da6-468a-80be-e69122580b2d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'generator.ts:349',message:'BEFORE_ULTRAHONK_CONSTRUCTOR',data:{bytecodeStringLength:bytecodeString.length,backendOptions,circuitOptions,circuitType},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7253/ingest/7771b592-8da6-468a-80be-e69122580b2d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'generator.ts:349',message:'BEFORE_ULTRAHONK_CONSTRUCTOR',data:{bytecodeStringLength:bytecodeString.length,backendOptions,circuitOptions,circuitType,noirVersion:circuitData.noir_version},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
       // #endregion
       backendInstances[circuitType] = new UltraHonkBackend(
         bytecodeString,

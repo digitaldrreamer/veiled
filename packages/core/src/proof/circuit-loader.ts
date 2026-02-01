@@ -80,21 +80,116 @@ export async function loadCircuit(type: CircuitType = 'wallet_ownership'): Promi
   
   if (typeof window !== 'undefined') {
     // Browser: fetch from public path with cache-busting to ensure fresh circuit
+    // * CRITICAL: Use absolute URL to avoid Next.js routing issues
+    // * In Next.js, relative URLs might be intercepted by the router
+    // * Also try relative URL as fallback if absolute fails
+    const baseUrl = window.location.origin;
     const cacheBuster = `?v=${Date.now()}`;
-    const circuitUrl = selected.browser + cacheBuster;
-    console.log('🔵 [VEILED] Fetching circuit from:', circuitUrl);
-    logger.debug('Fetching circuit from:', circuitUrl);
+    const absoluteUrl = baseUrl + selected.browser + cacheBuster;
+    const relativeUrl = selected.browser + cacheBuster;
+    let circuitUrl = absoluteUrl; // Try absolute first
+    
+    console.log('🔵 [VEILED] ========================================');
+    console.log('🔵 [VEILED] Circuit Loader - Browser Context');
+    console.log('🔵 [VEILED] Base URL:', baseUrl);
+    console.log('🔵 [VEILED] Circuit path:', selected.browser);
+    console.log('🔵 [VEILED] Absolute URL:', absoluteUrl);
+    console.log('🔵 [VEILED] Relative URL:', relativeUrl);
+    console.log('🔵 [VEILED] window.location:', {
+      origin: window.location.origin,
+      href: window.location.href,
+      pathname: window.location.pathname,
+      protocol: window.location.protocol,
+      host: window.location.host
+    });
+    console.log('🔵 [VEILED] ========================================');
+    logger.debug('Fetching circuit from:', { absoluteUrl, relativeUrl, baseUrl, circuitPath: selected.browser });
     // #region agent log
-    fetch('http://127.0.0.1:7253/ingest/7771b592-8da6-468a-80be-e69122580b2d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'circuit-loader.ts:76',message:'BEFORE_CIRCUIT_FETCH',data:{url:circuitUrl,type},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7253/ingest/7771b592-8da6-468a-80be-e69122580b2d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'circuit-loader.ts:76',message:'BEFORE_CIRCUIT_FETCH',data:{url:circuitUrl,absoluteUrl,relativeUrl,baseUrl,type},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
     // #endregion
-    const response = await fetch(circuitUrl, { cache: 'no-store' });
+    let response: Response;
+    try {
+      console.log('🔵 [VEILED] Attempting fetch with absolute URL:', circuitUrl);
+      // * CRITICAL: Service Worker from @aztec/bb.js may intercept fetches
+      // * Use bypass mode if Service Worker is active to avoid CSP issues
+      // * Check if Service Worker is registered and bypass if needed
+      const fetchOptions: RequestInit = {
+        cache: 'no-store',
+        method: 'GET',
+        mode: 'cors', // Explicitly use CORS mode (same-origin is allowed)
+        credentials: 'same-origin', // Include credentials for same-origin requests
+        headers: {
+          'Accept': 'application/json'
+        }
+      };
+      
+      // * If Service Worker is active, try to bypass it by using a different cache mode
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        console.warn('🔶 [VEILED] Service Worker detected - may interfere with circuit fetch');
+        // * Try with reload cache mode to bypass Service Worker
+        fetchOptions.cache = 'reload';
+      }
+      
+      response = await fetch(circuitUrl, fetchOptions);
+      console.log('🔵 [VEILED] Fetch response received:', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url,
+        redirected: response.redirected
+      });
+    } catch (absoluteError) {
+      // * If absolute URL fails, try relative URL as fallback
+      console.warn('🔶 [VEILED] Absolute URL fetch failed, trying relative URL...', absoluteError);
+      try {
+        circuitUrl = relativeUrl;
+        console.log('🔵 [VEILED] Attempting fetch with relative URL:', circuitUrl);
+        response = await fetch(circuitUrl, { 
+          cache: 'no-store',
+          method: 'GET',
+          mode: 'cors', // Explicitly use CORS mode (same-origin is allowed)
+          credentials: 'same-origin', // Include credentials for same-origin requests
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        console.log('🔵 [VEILED] Relative URL fetch succeeded:', {
+          ok: response.ok,
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url
+        });
+      } catch (relativeError) {
+        // * Both failed - throw with details
+        const errorMsg = absoluteError instanceof Error ? absoluteError.message : String(absoluteError);
+        const relativeErrorMsg = relativeError instanceof Error ? relativeError.message : String(relativeError);
+        console.error('🔴 [VEILED] Both absolute and relative URL fetches failed!');
+        console.error('🔴 [VEILED] Absolute URL error:', errorMsg);
+        console.error('🔴 [VEILED] Relative URL error:', relativeErrorMsg);
+        throw absoluteError; // Throw the first error
+      }
+    }
+    
+    // * If we got here, we have a response (from either absolute or relative)
+    if (!response) {
+      throw new Error('No response received from fetch');
+    }
     
     if (!response.ok) {
       console.error('🔴 [VEILED] Failed to fetch circuit:', response.status, response.statusText);
-      logger.error('Failed to fetch circuit:', response.status, response.statusText);
+      console.error('🔴 [VEILED] Circuit URL:', circuitUrl);
+      console.error('🔴 [VEILED] Response headers:', Object.fromEntries(response.headers.entries()));
+      logger.error('Failed to fetch circuit:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: circuitUrl,
+        circuitType: type
+      });
       logger.groupEnd();
       throw new Error(
-        `Failed to load circuit (${type}): ${response.statusText}. Expected at ${selected.browser}`
+        `Failed to load circuit (${type}): ${response.status} ${response.statusText}. ` +
+        `Expected at ${selected.browser}. ` +
+        `Make sure the file exists in the public directory and the dev server is running.`
       );
     }
     circuitData = await response.json();
