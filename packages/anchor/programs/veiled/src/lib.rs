@@ -28,7 +28,7 @@ use ultrahonk::VerificationResult;
 // * Anchor's #[program] macro needs Accounts structs accessible from crate root
 pub use instructions::*;
 
-declare_id!("F5LoTYERbrncwU2RdEAC36bxMxEiLxUwDpYFWrFqJRsC");
+declare_id!("H6apEGZAw23AKUeqCX41wkDv2LVwX3Ec8oYPip7k3xzA");
 
 // * Define VerifyAuth at crate root (before #[program] block) so macro can find it
 // * This Accounts struct is used by verify_auth instruction handler
@@ -42,7 +42,8 @@ pub struct VerifyAuth<'info> {
         init_if_needed,
         payer = authority,
         space = 8 + 32 + 4 + 32 + 8 + 8, // * 8 discriminator + 32 nullifier + 4 String len + 32 domain max + 8 created_at + 8 expires_at
-        seeds = [b"nullifier", authority.key().as_ref()], // * Include authority for unique PDAs per user
+        // * PDA keyed by nullifier for replay protection
+        seeds = [b"nullifier", nullifier.as_ref()],
         bump
     )]
     pub nullifier_account: Account<'info, NullifierAccount>,
