@@ -1,0 +1,8 @@
+[package]
+name = "veiled_balance_range"
+type = "bin"
+authors = ["Veiled Team"]
+compiler_version = ">=0.23.0"
+
+[dependencies]
+
