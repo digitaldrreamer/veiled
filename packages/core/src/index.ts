@@ -5,19 +5,20 @@ export type {
   VeiledConfig,
   VeiledRequirements,
   VeiledRpcProvider,
-  Permission,
+  VeiledChain,
   PermissionRequest,
   PermissionGrant,
   PermissionAccess,
   Session
 } from './types.js';
+export { Permission } from './types.js';
 export { PermissionModal } from './ui/permission-modal.js';
 export type { WalletAdapter } from './wallet/adapter.js';
 export { getWalletProof, prepareSecretKeyFromSignature } from './wallet/adapter.js';
-export { createSolanaWalletAdapter } from './wallet/solana-adapter.js';
+export { createSolanaWalletAdapter, adaptSolanaWallet } from './wallet/solana-adapter.js';
 export type { CompiledCircuit, CircuitABI } from './proof/circuit-loader.js';
-export { loadCircuit, generateWitness } from './proof/circuit-loader.js';
-export type { ProofInputs, ProofResult } from './proof/generator.js';
+export { loadCircuit } from './proof/circuit-loader.js';
+export type { ProofInputs, ProofResult, NFTOwnershipProofInputs } from './proof/generator.js';
 export { 
   prepareProofInputs, 
   generateProof, 
@@ -27,6 +28,16 @@ export {
   exportVerificationKey, 
   exportVerificationKeyAsJson 
 } from './proof/generator.js';
+
+// * Export DAS types for external use
+export type {
+  DasAssetItem,
+  DasGetAssetsByOwnerResponse,
+  DasGrouping,
+  DasContent,
+  DasOwnership,
+  DasCompression
+} from './providers/quicknode-client.js';
 export { 
   submitVerificationResultToChain,
   submitProofToChain, // * Deprecated

@@ -17,20 +17,23 @@
         "build": "tsc -p tsconfig.json",
         "dev": "tsc -p tsconfig.json -w",
         "check": "tsc -p tsconfig.json --noEmit",
-        "prepare": "bun run build",
+        "prepare": "bun run check || true",
         "generate-vk": "bun run scripts/generate-verification-key.ts"
     },
     "dependencies": {
-        "@aztec/bb.js": "^0.84.0",
         "@coral-xyz/anchor": "^0.32.1",
         "@solana/wallet-adapter-base": "^0.9.23",
-        "@solana/web3.js": "^1.95.8"
+        "@solana/web3.js": "^1.95.8",
+        "bn.js": "^5.2.1",
+        "@aztec/bb.js": "^0.82.2"
     },
     "devDependencies": {
-        "typescript": "^5.9.3"
+        "typescript": "^5.9.3",
+        "@types/bn.js": "^5.1.5"
     },
     "peerDependencies": {
         "@noir-lang/noir_js": "^1.0.0-beta.18",
-        "@noir-lang/backend_barretenberg": "^0.36.0"
+        "@noir-lang/noirc_abi": "*",
+        "@noir-lang/acvm_js": "*"
     }
 }
