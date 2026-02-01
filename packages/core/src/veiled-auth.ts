@@ -17,6 +17,7 @@ import type {
   Session,
   VeiledRequirements
 } from './types.js';
+import type { ProgressCallback, ProgressStage } from './types/widget.js';
 import { 
   prepareProofInputs, 
   generateProof, 
@@ -70,9 +71,11 @@ export class VeiledAuth {
           '[Veiled] Failed to adapt wallet from config:',
           error instanceof Error ? error.message : String(error)
         );
-        // * Don't throw - allow setWalletAdapter() to be called later
+        // * Don't throw - allow auto-detection or setWalletAdapter() to be called later
       }
     }
+    // * If no wallet provided, walletAdapter remains null
+    // * It can be set later via setWalletAdapter() or will be auto-detected in signIn()
   }
   
   /**
@@ -81,6 +84,79 @@ export class VeiledAuth {
    */
   setWalletAdapter(adapter: WalletAdapter): void {
     this.walletAdapter = adapter;
+  }
+
+  /**
+   * * Tries to auto-detect installed wallet extensions
+   * * Returns null if no wallet is detected
+   * * This abstracts wallet detection complexity from consumers
+   */
+  private _tryAutoDetectWallet(): WalletAdapter | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    const solanaWindow = window as typeof window & {
+      solana?: { isPhantom?: boolean; isSolflare?: boolean; connect?: () => Promise<void> }
+      solflare?: unknown
+    }
+
+    // * Check for Phantom (most common)
+    if (solanaWindow.solana?.isPhantom) {
+      // * Create a minimal adapter wrapper around window.solana
+      // * This avoids needing @solana/wallet-adapter-wallets as a dependency
+      return this._createWindowSolanaAdapter(solanaWindow.solana);
+    }
+
+    // * Check for Solflare
+    if (solanaWindow.solflare || solanaWindow.solana?.isSolflare) {
+      // * For Solflare, we'd need the adapter, but for now just check window.solana
+      if (solanaWindow.solana) {
+        return this._createWindowSolanaAdapter(solanaWindow.solana);
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * * Creates a minimal WalletAdapter from window.solana
+   * * This allows auto-detection without requiring wallet-adapter-wallets dependency
+   */
+  private _createWindowSolanaAdapter(solana: any): WalletAdapter {
+    return {
+      get publicKey() {
+        return solana.publicKey || null;
+      },
+      get connected() {
+        return !!solana.isConnected;
+      },
+      async connect() {
+        if (!solana.connect) {
+          throw new Error('Wallet does not support connect()');
+        }
+        await solana.connect();
+      },
+      async disconnect() {
+        if (solana.disconnect) {
+          await solana.disconnect();
+        }
+      },
+      async signMessage(message: Uint8Array): Promise<Uint8Array> {
+        if (!solana.signMessage) {
+          throw new Error('Wallet does not support signMessage()');
+        }
+        const result = await solana.signMessage(message);
+        // * Handle different signature formats
+        if (result.signature instanceof Uint8Array) {
+          return result.signature;
+        }
+        if (Array.isArray(result.signature)) {
+          return new Uint8Array(result.signature);
+        }
+        throw new Error('Unsupported signature format');
+      }
+    };
   }
 
   /**
@@ -126,24 +202,53 @@ export class VeiledAuth {
     }
   }
 
-  async signIn(options: SignInOptions): Promise<Session> {
+  async signIn(options: SignInOptions, progress?: ProgressCallback): Promise<Session> {
     console.log('🔵 [VEILED] ========================================');
     console.log('🔵 [VEILED] VeiledAuth.signIn() called');
     console.log('🔵 [VEILED] Options:', JSON.stringify(options, null, 2));
     
+    try {
+      // * Stage 1: Wallet Connect
+      progress?.onStageChange?.('wallet_connect');
+    
+    // * Auto-detect wallet if not set (abstracts complexity from consumers)
     if (!this.walletAdapter) {
-      console.error('🔴 [VEILED] Wallet adapter not set!');
-      throw new Error(
-        'Wallet not connected. Pass `wallet` in VeiledAuth config or call setWalletAdapter() after your Solana wallet connects.'
-      );
+      this.walletAdapter = this._tryAutoDetectWallet();
+      
+      if (!this.walletAdapter) {
+        console.error('🔴 [VEILED] Wallet adapter not set and auto-detection failed!');
+        const error = new Error(
+          'No wallet detected. Please install Phantom or Solflare wallet extension, or pass `wallet` in VeiledAuth config.'
+        );
+        progress?.onError?.(error, 'wallet_connect');
+        throw error;
+      }
     }
 
     if (!this.walletAdapter.connected) {
+        progress?.onProgress?.(0, 'Connecting wallet...');
       await this.walletAdapter.connect();
-    }
+        progress?.onProgress?.(100, 'Wallet connected');
+        progress?.onStageChange?.('wallet_connect', {
+          walletAddress: this.walletAdapter.publicKey?.toBase58()
+        });
+      } else {
+        progress?.onStageChange?.('wallet_connect', {
+          walletAddress: this.walletAdapter.publicKey?.toBase58()
+        });
+      }
+      
+      // * Stage 2: Requirements Check
+      progress?.onStageChange?.('requirements_check');
+      
+      // * Stage 3: Wallet Proof
+      progress?.onStageChange?.('wallet_proof');
+      progress?.onProgress?.(0, 'Sign message in wallet...');
     
     // * Get proof of wallet ownership via message signing
     const walletProof = await getWalletProof(this.walletAdapter, options.domain);
+      
+      progress?.onProgress?.(100, 'Message signed');
     
     // * Prepare secret key material from signature
     // TODO: Update circuit to verify signature directly instead of using secret key
@@ -168,13 +273,16 @@ export class VeiledAuth {
       console.log('🔵 [VEILED] Using balance_range circuit');
       // * Ensure wallet is set
       if (!this.wallet) {
-        throw new Error('Wallet required for balance range proof. Call setSolanaConnection() with wallet.');
+          const error = new Error('Wallet required for balance range proof. Call setSolanaConnection() with wallet.');
+          progress?.onError?.(error, 'requirements_check');
+          throw error;
       }
       // * Auto-create connection from config if not set
       if (!this.connection) {
         this.connection = this.createSolanaConnection();
       }
 
+        progress?.onProgress?.(0, 'Fetching balance...');
       console.log('🔵 [VEILED] Preparing balance range circuit inputs...');
       const balanceInputs = await prepareBalanceRangeCircuitInputs(
         options,
@@ -183,9 +291,34 @@ export class VeiledAuth {
         this.wallet
       );
       console.log('🔵 [VEILED] Balance inputs prepared:', balanceInputs);
+        progress?.onProgress?.(50, 'Balance verified');
+
+        // * Stage 4: Proof Generation
+        progress?.onStageChange?.('proof_generation');
+        progress?.onProgress?.(0, 'Generating zero-knowledge proof...');
+        
+        // * Simulate progress for proof generation (2-3 seconds)
+        let progressInterval: NodeJS.Timeout | null = null;
+        if (progress?.onProgress) {
+          let simulatedProgress = 0;
+          progressInterval = setInterval(() => {
+            simulatedProgress = Math.min(simulatedProgress + 10, 90);
+            progress.onProgress?.(simulatedProgress, 'Generating proof...');
+          }, 200);
+        }
 
       console.log('🔵 [VEILED] Generating balance range proof...');
+        try {
       proofResult = await generateProof(balanceInputs, 'balance_range');
+          if (progressInterval) clearInterval(progressInterval);
+          progress?.onProgress?.(100, 'Proof generated');
+        } catch (error) {
+          if (progressInterval) clearInterval(progressInterval);
+          const proofError = error instanceof Error ? error : new Error(String(error));
+          progress?.onError?.(proofError, 'proof_generation');
+          throw proofError;
+        }
+        
       proofHex = '0x' + Array.from(proofResult.proof)
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
@@ -196,18 +329,23 @@ export class VeiledAuth {
       console.log('🔵 [VEILED] Using nft_ownership circuit');
       if (!this.wallet) {
         console.error('🔴 [VEILED] Wallet required for NFT ownership proof');
-        throw new Error('Wallet required for NFT ownership proof');
+          const error = new Error('Wallet required for NFT ownership proof');
+          progress?.onError?.(error, 'requirements_check');
+          throw error;
       }
 
       // * Create Quicknode client
       if (!this.config.quicknodeEndpoint) {
-        throw new Error('Quicknode endpoint required for NFT ownership circuit. Set quicknodeEndpoint in VeiledConfig.');
+          const error = new Error('Quicknode endpoint required for NFT ownership circuit. Set quicknodeEndpoint in VeiledConfig.');
+          progress?.onError?.(error, 'requirements_check');
+          throw error;
       }
       const quicknodeClient = new QuicknodeClient(
         this.config.quicknodeEndpoint,
         this.config.quicknodeApiKey
       );
 
+        progress?.onProgress?.(0, 'Checking NFT ownership...');
       console.log('🔵 [VEILED] Preparing NFT ownership circuit inputs...');
       const nftInputs = await prepareNFTOwnershipCircuitInputs(
         options,
@@ -216,9 +354,34 @@ export class VeiledAuth {
         this.wallet
       );
       console.log('🔵 [VEILED] NFT inputs prepared:', nftInputs);
+        progress?.onProgress?.(50, 'NFT verified');
+
+        // * Stage 4: Proof Generation
+        progress?.onStageChange?.('proof_generation');
+        progress?.onProgress?.(0, 'Generating zero-knowledge proof...');
+        
+        // * Simulate progress for proof generation (2-3 seconds)
+        let progressInterval: NodeJS.Timeout | null = null;
+        if (progress?.onProgress) {
+          let simulatedProgress = 0;
+          progressInterval = setInterval(() => {
+            simulatedProgress = Math.min(simulatedProgress + 10, 90);
+            progress.onProgress?.(simulatedProgress, 'Generating proof...');
+          }, 200);
+        }
 
       console.log('🔵 [VEILED] Generating NFT ownership proof...');
+        try {
       proofResult = await generateProof(nftInputs, 'nft_ownership');
+          if (progressInterval) clearInterval(progressInterval);
+          progress?.onProgress?.(100, 'Proof generated');
+        } catch (error) {
+          if (progressInterval) clearInterval(progressInterval);
+          const proofError = error instanceof Error ? error : new Error(String(error));
+          progress?.onError?.(proofError, 'proof_generation');
+          throw proofError;
+        }
+        
       proofHex = '0x' + Array.from(proofResult.proof)
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
@@ -228,11 +391,35 @@ export class VeiledAuth {
       console.log('🔵 [VEILED] Preparing wallet ownership circuit inputs...');
     const proofInputs = await prepareProofInputs(options, walletSecretKey);
       console.log('🔵 [VEILED] Proof inputs prepared:', proofInputs);
+        
+        // * Stage 4: Proof Generation
+        progress?.onStageChange?.('proof_generation');
+        progress?.onProgress?.(0, 'Generating zero-knowledge proof...');
+        
+        // * Simulate progress for proof generation (2-3 seconds)
+        let progressInterval: NodeJS.Timeout | null = null;
+        if (progress?.onProgress) {
+          let simulatedProgress = 0;
+          progressInterval = setInterval(() => {
+            simulatedProgress = Math.min(simulatedProgress + 10, 90);
+            progress.onProgress?.(simulatedProgress, 'Generating proof...');
+          }, 200);
+        }
+        
       console.log('🔵 [VEILED] Generating wallet ownership proof...');
       // #region agent log
       fetch('http://127.0.0.1:7253/ingest/7771b592-8da6-468a-80be-e69122580b2d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'veiled-auth.ts:135',message:'BEFORE_GENERATE_PROOF',data:{circuitType:'wallet_ownership'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
       // #endregion
+        try {
       proofResult = await generateProof(proofInputs, 'wallet_ownership');
+          if (progressInterval) clearInterval(progressInterval);
+          progress?.onProgress?.(100, 'Proof generated');
+        } catch (error) {
+          if (progressInterval) clearInterval(progressInterval);
+          const proofError = error instanceof Error ? error : new Error(String(error));
+          progress?.onError?.(proofError, 'proof_generation');
+          throw proofError;
+        }
       // #region agent log
       fetch('http://127.0.0.1:7253/ingest/7771b592-8da6-468a-80be-e69122580b2d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'veiled-auth.ts:137',message:'AFTER_GENERATE_PROOF',data:{hasProof:!!proofResult.proof,proofLength:proofResult.proof?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
       // #endregion
@@ -240,6 +427,10 @@ export class VeiledAuth {
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
     }
+      
+      // * Stage 5: Proof Verification
+      progress?.onStageChange?.('proof_verification');
+      progress?.onProgress?.(0, 'Verifying proof...');
     
     // * Verify proof off-chain using WASM backend
     // * CRITICAL: Must pass the full publicInputsArray and circuitType to verifyProof()
@@ -257,20 +448,28 @@ export class VeiledAuth {
       );
       
       if (!isValid) {
-        throw new Error('Proof verification failed. The generated proof is invalid.');
+          const error = new Error('Proof verification failed. The generated proof is invalid.');
+          progress?.onError?.(error, 'proof_verification');
+          throw error;
       }
       
       console.log('✅ Proof verified successfully!');
+        progress?.onProgress?.(100, 'Proof verified');
     } catch (error) {
       // * Verification failed - reject the proof
       const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`Proof verification failed: ${message}. Cannot proceed with invalid proof.`);
+        const verificationError = new Error(`Proof verification failed: ${message}. Cannot proceed with invalid proof.`);
+        progress?.onError?.(verificationError, 'proof_verification');
+        throw verificationError;
     }
 
-    // * Submit verification result to Anchor program if connection is available
+      // * Stage 6: Verification Signature (if on-chain submission enabled)
     let txSignature: string | undefined;
     if (this.connection && this.wallet) {
       try {
+          progress?.onStageChange?.('verification_signature');
+          progress?.onProgress?.(0, 'Sign verification result...');
+          
         // * Sign the verification result message for additional security
         // * Message format: proof_hash (32) + is_valid (1) + timestamp (8) = 41 bytes
         const proofHash = await hashProofAsync(proofResult.proof);
@@ -304,6 +503,12 @@ export class VeiledAuth {
           console.warn('Wallet adapter does not support signMessage, using placeholder signature');
           signature = new Uint8Array(64);
         }
+          
+          progress?.onProgress?.(100, 'Signed');
+          
+          // * Stage 7: On-Chain Submission
+          progress?.onStageChange?.('on_chain_submission');
+          progress?.onProgress?.(0, 'Submitting to Solana...');
         
         // * Create verification result with actual signature
         const verificationResult = await createVerificationResult(
@@ -320,9 +525,14 @@ export class VeiledAuth {
           wallet: this.wallet
         });
         txSignature = submitResult.signature;
+          progress?.onProgress?.(100, 'Submitted');
       } catch (error) {
         // * Log error but don't fail the auth flow
         console.warn('Failed to submit verification result to chain:', error);
+          if (progress?.onError) {
+            const chainError = error instanceof Error ? error : new Error(String(error));
+            progress.onError(chainError, 'on_chain_submission');
+          }
       }
     }
 
@@ -335,14 +545,24 @@ export class VeiledAuth {
       txSignature
     };
 
-    // * Handle optional permission flow
+      // * Stage 8: Permissions Request (optional)
     let grantedPermissions: Permission[] = [];
     if (options.permissions && this.connection && this.wallet) {
-      grantedPermissions = await this.requestPermissions(
+        progress?.onStageChange?.('permissions_request');
+        const granted = await this.requestPermissions(
         baseResult.nullifier,
         options.domain,
-        options.permissions
+          options.permissions,
+          progress
       );
+        
+        if (granted.length > 0) {
+          progress?.onStageChange?.('grant_permissions');
+          progress?.onProgress?.(0, 'Granting permissions...');
+          // * Permissions are already granted in requestPermissions()
+          grantedPermissions = granted;
+          progress?.onProgress?.(100, 'Granted');
+        }
     }
 
     const session: Session = {
@@ -357,7 +577,18 @@ export class VeiledAuth {
 
     this.currentSession = session;
     this.currentDomain = options.domain;
+      
+      // * Stage 9: Success
+      progress?.onStageChange?.('success');
+      
     return session;
+    } catch (error) {
+      // * Error handling - determine which stage we were in
+      const currentStage: ProgressStage = 'wallet_connect'; // Default, will be updated by progress callbacks
+      const err = error instanceof Error ? error : new Error(String(error));
+      progress?.onError?.(err, currentStage);
+      throw error;
+    }
   }
 
   async verifySession(nullifier: string): Promise<{ valid: boolean; expired?: boolean }> {
@@ -413,6 +644,35 @@ export class VeiledAuth {
     }
   }
 
+  /**
+   * * Get current session
+   * * Returns the active session if one exists
+   */
+  getSession(): Session | null {
+    return this.currentSession;
+  }
+
+  /**
+   * * Renders a button that opens the sign-in modal
+   * * @param target - CSS selector or HTMLElement where button should be rendered
+   * * @param config - Widget configuration
+   * * @returns WidgetInstance with button element
+   */
+  async renderButton(target: string | HTMLElement, config: import('./types/widget.js').WidgetConfig): Promise<import('./types/widget.js').WidgetInstance> {
+    const { renderButton: renderButtonImpl } = await import('./ui/sign-in-widget-api.js')
+    return renderButtonImpl(this, target, config)
+  }
+
+  /**
+   * * Opens the sign-in modal programmatically
+   * * @param config - Widget configuration
+   * * @returns WidgetInstance for controlling the modal
+   */
+  async openAuthModal(config: import('./types/widget.js').WidgetConfig): Promise<import('./types/widget.js').WidgetInstance> {
+    const { openAuthModal: openAuthModalImpl } = await import('./ui/sign-in-widget-api.js')
+    return openAuthModalImpl(this, config)
+  }
+
   async signOut(): Promise<void> {
     // TODO: Support session expiry / revocation where applicable.
     this.currentSession = null;
@@ -425,7 +685,8 @@ export class VeiledAuth {
   private async requestPermissions(
     nullifierHex: string,
     domain: string,
-    request: PermissionRequest
+    request: PermissionRequest,
+    progress?: ProgressCallback
   ): Promise<Permission[]> {
     if (!this.connection || !this.wallet) {
       throw new Error('Connection and wallet must be set before requesting permissions.');
