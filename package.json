@@ -8,6 +8,24 @@
   "scripts": {
     "dev": "bun --filter './apps/demo' dev",
     "build": "bun --filter './packages/*' run build && bun --filter './apps/*' run build",
-    "test": "bun test"
+    "test": "bun test",
+    "validate-program-id": "npx tsx scripts/validate-program-id.ts",
+    "deploy:devnet": "bash scripts/deploy-program.sh devnet",
+    "deploy:localnet": "bash scripts/deploy-program.sh localnet",
+    "mint-devnet-nft": "bun scripts/mint-devnet-nft.ts",
+    "verify-nft-collection": "bun scripts/verify-nft-collection.ts"
+  },
+  "dependencies": {
+    "@aztec/bb.js": "0.82.2",
+    "@noir-lang/acvm_js": "1.0.0-beta.3",
+    "@noir-lang/noir_js": "1.0.0-beta.3",
+    "@noir-lang/noirc_abi": "1.0.0-beta.3"
+  },
+  "devDependencies": {
+    "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
+    "@metaplex-foundation/mpl-toolbox": "^0.10.0",
+    "@metaplex-foundation/umi": "^1.4.1",
+    "@metaplex-foundation/umi-bundle-defaults": "^1.4.1",
+    "tsx": "^4.7.0"
   }
 }
