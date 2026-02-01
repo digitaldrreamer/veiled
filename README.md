@@ -1,6 +1,6 @@
 # Veiled 🔒
 
-**Private authentication for Solana. Prove ownership without revealing your wallet.**
+**OAuth-level privacy for Web3—authenticate on Solana without exposing your wallet address, balance, or transaction history.**
 
 [![Solana](https://img.shields.io/badge/Solana-14F195?style=flat&logo=solana&logoColor=white)](https://solana.com)
 [![Noir](https://img.shields.io/badge/Noir-000000?style=flat&logo=aztec&logoColor=white)](https://noir-lang.org/)
@@ -14,13 +14,66 @@ Built for [Solana Privacy Hack 2026](https://solana.com/privacyhack)
 
 ## The Problem
 
-When you "Sign in with Solana" today, you expose your **entire financial history**:
-- ✅ Wallet balance visible
-- ✅ NFT collection visible  
-- ✅ Transaction history visible
-- ✅ DeFi positions visible
+Web3 authentication is stuck in Web 1.0.
 
-**This is worse privacy than Web2.** Imagine if "Sign in with Google" showed websites your bank balance.
+**When you "Sign in with Google," websites see:**
+- ✅ Your email address
+- ❌ NOT your Gmail inbox
+- ❌ NOT your Google Drive files
+- ❌ NOT your YouTube watch history
+
+**When you "Sign in with Solana," websites see:**
+- ✅ Your wallet address
+- ✅ Your entire balance
+- ✅ Your complete NFT collection
+- ✅ Your full transaction history
+
+**This is backwards. Web3 should be MORE private, not less.**
+
+![Traditional Auth Exposes Wallet Info](resources/exposed_wallet_info_default_auth.png)
+
+**Figure 0.1:** Traditional Solana authentication exposes your complete wallet information to every dApp.
+
+![Default Solana Auth with Exposed Credentials](resources/screen-showing-default-solana-auth-with-exposed-credentials.png)
+
+**Figure 0.2:** Default Solana authentication flow showing exposed wallet credentials and balance information.
+
+Every sign-in exposes your financial identity, making you:
+- 🔗 Trackable across sites (same wallet = same identity)
+- 📊 Profilable (apps build complete financial profiles)
+- 🎯 Targetable (high-value wallets identified)
+- 🚫 Unable to control what you share
+
+### Visual Comparison
+
+![Side-by-Side Comparison: Traditional vs Veiled Authentication](resources/demo_app_both_login_buttons.png)
+
+**Figure 1:** Traditional wallet connection exposes your entire financial profile. Veiled proves ownership without revealing sensitive data.
+
+![Veiled Anonymous ID](resources/anonymous_id_veiled.png)
+
+**Figure 1.2:** With Veiled, dApps only see an anonymous ID instead of your wallet address.
+
+> **📸 Screenshot needed:** Side-by-side comparison showing:
+> - Left: Traditional auth with wallet address, balance, NFTs, transaction history visible
+> - Right: Veiled auth with all data hidden, showing only anonymous ID and privacy score
+
+---
+
+## Data Exposure Comparison
+
+| Data Point | Traditional Auth | Veiled Auth |
+|------------|------------------|-------------|
+| Wallet Address | ✅ Exposed | ❌ Hidden |
+| SOL Balance | ✅ Exposed | ❌ Hidden |
+| Token Holdings | ✅ Exposed | ❌ Hidden |
+| NFT Collection | ✅ Exposed | ❌ Hidden |
+| Transaction History | ✅ Exposed | ❌ Hidden |
+| DeFi Positions | ✅ Exposed | ❌ Hidden |
+| Net Worth | ✅ Exposed | ❌ Hidden |
+| Trackable Across Sites | ✅ Yes | ❌ Impossible |
+
+**Table 1:** Comparison of data exposure between traditional Solana authentication and Veiled's privacy-preserving approach.
 
 ---
 
@@ -112,6 +165,14 @@ console.log('Authenticated:', session.nullifier);
 
 **Try it now:** [veiled.vercel.app](https://veiled.vercel.app)
 
+![AI Chat with Exposed Credentials](resources/ai_chat_showing_exposed_credentials.png)
+
+**Figure 1.3:** Traditional authentication in AI chat - your wallet address and credentials are exposed to the service.
+
+![AI Chat with Secure ZK by Veiled](resources/ai_chat_showing_secure_zk_by_veiled.png)
+
+**Figure 1.4:** Veiled authentication in AI chat - only anonymous ID is visible, protecting your privacy.
+
 **Circuits Deployed:**
 - ✅ Wallet Ownership (`packages/circuit/`)
 - ✅ Balance Range (`packages/circuit-balance-range/`)
@@ -123,11 +184,48 @@ console.log('Authenticated:', session.nullifier);
 
 ## Use Cases
 
-### 🎨 NFT-Gated Access (Without Wallet Exposure)
+### 🎭 Anonymous Authentication
+
+![Anonymous Authentication Example](resources/anonymous-authentication.png)
+
+**Figure 1.1:** Anonymous authentication flow. Users prove wallet ownership without revealing their address or financial data.
 
 ```typescript
-// Prove you own an NFT without revealing which one
-// Note: Requires Quicknode endpoint for NFT queries
+// Same identity across apps, but unlinkable
+const session = await veiled.signIn({
+  requirements: { wallet: true },
+  domain: 'myapp.com'
+});
+
+// App sees: veiled_7a3b... (anonymous ID)
+// App CANNOT see: Your wallet address, balance, or history
+// You get: Privacy-preserving authentication
+```
+
+**Enable new use cases:**
+- Gaming: Same player identity across games, untraceable
+- Social: Private profiles without wallet exposure
+- Marketplaces: Buy/sell without revealing holdings
+
+---
+
+### 🎨 NFT-Gated Access (Without Wallet Exposure)
+
+![NFT-Gated Access Example](resources/nft-gated-access.png)
+
+**Figure 2:** NFT-gated access with privacy. Prove ownership without revealing your specific token or other holdings.
+
+> **📸 Screenshot needed:** Discord channel showing:
+> - Traditional auth: Bot sees DeGod #1234, all other NFTs, wallet balance
+> - Veiled auth: Bot sees "User owns a DeGod" but cannot see which one or other holdings
+
+```typescript
+// ❌ Traditional: Exposes everything
+const { publicKey } = useWallet();
+const nfts = await fetchNFTs(publicKey); // Bot sees ALL your NFTs
+const hasDeGod = nfts.find(n => n.collection === 'DeGods');
+
+// ✅ Veiled: Proves ownership, hides specifics
 const veiled = new VeiledAuth({
   chain: 'solana',
   rpcProvider: 'quicknode',
@@ -142,14 +240,29 @@ await veiled.signIn({
   domain: window.location.hostname
 });
 
-// Discord bot grants access
-// Bot CANNOT see which DeGod you own or what else is in your wallet
+// Returns: { nullifier: 'veiled_7a3b...', verified: true }
+// Bot knows: "User owns A DeGod" 
+// Bot CANNOT know: Which one, what else they own
 ```
 
 ### 💰 DeFi (Without Revealing Net Worth)
 
+![DeFi Balance Requirements Example](resources/defi-balance-requirements.png)
+
+**Figure 3:** Balance verification with selective disclosure. Prove you meet requirements without revealing exact holdings.
+
+> **📸 Screenshot needed:** Lending protocol showing:
+> - Traditional auth: "You have: 45.67 SOL" - protocol sees exact balance, adjusts rates
+> - Veiled auth: "Verified: Balance in range 10-100 SOL" - protocol sees qualification only
+
 ```typescript
-// Prove SOL balance range without exact amount (currently supported)
+// ❌ Traditional: Reveals everything
+const balance = await connection.getBalance(publicKey);
+console.log(`User has ${balance / 1e9} SOL`);
+// Protocol knows: "This user has 45.67 SOL exactly"
+// They can: Adjust pricing, track net worth, target for exploits
+
+// ✅ Veiled: Proves range only
 await veiled.signIn({
   requirements: {
     wallet: true,
@@ -159,7 +272,8 @@ await veiled.signIn({
   domain: window.location.hostname
 });
 
-// Protocol gates access without seeing your net worth
+// Protocol knows: "User has 10-100 SOL" (bucket proof)
+// They CANNOT: See exact amount, track net worth, target user
 
 // ⏳ Token balance proofs (USDC, etc.) - Coming in v2
 // Currently: SOL balance range proofs are fully supported
@@ -167,8 +281,22 @@ await veiled.signIn({
 
 ### 🗳️ Anonymous DAO Voting
 
+![Anonymous DAO Voting Example](resources/anonymous-dao-voting.png)
+
+**Figure 4:** Anonymous governance voting. Prove eligibility without revealing identity or how you voted.
+
+> **📸 Screenshot needed:** DAO proposal page showing:
+> - Traditional auth: "Wallet: 7xKXtg2CW... voted YES" - everyone knows who voted
+> - Veiled auth: "veiled_7a3b... voted YES" - anonymous vote counted, cannot trace to wallet
+
 ```typescript
-// Prove SOL balance without revealing identity (currently supported)
+// ❌ Traditional: Reveals voter identity
+const { publicKey } = useWallet();
+await castVote(proposalId, 'YES', publicKey);
+// Everyone sees: "7xKXtg2CW... voted YES"
+// Can be bribed or coerced, not truly democratic
+
+// ✅ Veiled: Anonymous but verifiable
 await veiled.signIn({
   requirements: {
     wallet: true,
@@ -178,10 +306,16 @@ await veiled.signIn({
   domain: window.location.hostname
 });
 
-// Vote anonymously but verifiably
+await castVote(proposalId, 'YES', session.nullifier);
+// Everyone sees: "veiled_7a3b... voted YES"
+// Cannot trace to wallet, true democratic voting
 ```
 
 ### 🎮 Gaming (Cross-Game Identity)
+
+![Gaming Cross-Game Identity Example](resources/gaming-cross-game-identity.png)
+
+**Figure 2.1:** Cross-game identity with unlinkability. Same player across games, but untraceable between them.
 
 ```typescript
 // Same player across games, but untraceable
@@ -202,7 +336,17 @@ const user2 = await veiled.signIn({
 
 ### 🔐 Privacy with Flexibility (Permission System)
 
-Veiled supports an OAuth-like permission system that lets users control what information apps can access:
+Veiled supports an OAuth-like permission system that lets users control what information apps can access.
+
+![Permission Request Modal](resources/privacy-with-flexibility.png)
+
+**Figure 5:** Permission request modal showing privacy impact. Users see exactly what they're sharing and can deny while still using the app.
+
+> **📸 Screenshot needed:** Modal showing:
+> - Permission request: "See your wallet address" (HIGH risk)
+> - Privacy impact: 10/10 → 2/10
+> - Warning about what app can do
+> - Deny/Allow buttons
 
 ```typescript
 // Default: Maximum privacy (nothing revealed)
@@ -225,6 +369,26 @@ const session = await veiled.signIn({
 // User sees warning: "⚠️ This will compromise privacy (10/10 → 2/10)"
 // User can DENY - app still works with just nullifier!
 ```
+
+![Active Permissions View](resources/privacy-with-flexibility.png)
+
+**Figure 6:** Active session with granted permissions. Users can see what data is exposed and revoke access at any time.
+
+> **📸 Screenshot needed:** Session view showing:
+> - Active permissions list
+> - Privacy status indicator
+> - What app can currently do
+> - Revoke/Sign Out buttons
+
+![Progressive Permissions](resources/privacy-with-flexibility.png)
+
+**Figure 7:** Progressive permissions for sensitive operations. Transaction signing doesn't compromise privacy, shown with clear risk assessment.
+
+> **📸 Screenshot needed:** Transaction confirmation showing:
+> - Additional permission request for transaction signing
+> - Risk level (CRITICAL)
+> - Privacy impact (no change for signing)
+> - Single-use scope
 
 **Available Permissions:**
 - `reveal_wallet_address` - Show wallet address (HIGH risk)
@@ -262,6 +426,18 @@ User → Generates ZK proof → dApp sees ONLY:
 ❌ NOT transaction history
 ❌ NOT other holdings
 ```
+
+![Generating ZK Proof](resources/generating_zk_proof.png)
+
+**Figure 3.1:** Client-side ZK proof generation. Your wallet address never leaves your browser.
+
+![Waiting for Wallet Signature](resources/waiting_for_wallet_signature.png)
+
+**Figure 3.2:** User signs the verification result with their wallet. Only the signature is submitted on-chain.
+
+![Generated ZK Proof Auth Complete](resources/generated_zk_proof_auth_complete.png)
+
+**Figure 3.3:** Authentication complete. dApp receives verified proof without seeing your wallet address.
 
 ### Technical Flow
 
@@ -342,6 +518,36 @@ veiled/
 - **Non-replayability**: Nullifiers prevent proof reuse
 - **Soundness**: Can't fake proofs (cryptographically guaranteed)
 - **Zero-knowledge**: Verifier learns nothing beyond the claim
+
+---
+
+## Security Benefits
+
+As a natural consequence of privacy-first design, Veiled provides significant security improvements:
+
+### 🛡️ Reduced Attack Surface
+- **No wallet exposure** → Can't query holdings for targeted attacks
+- **No cross-site correlation** → Can't build comprehensive profiles
+- **No data aggregation** → Nothing to sell to attackers
+
+### 🔒 Data Breach Protection
+- **Only nullifiers exposed** → No financial data in databases
+- **Unlinkable identifiers** → Can't connect to real wallet
+- **Minimal impact** → Breaches reveal anonymous IDs only
+
+### 🎯 Phishing Resistance
+- **No balance visibility** → Can't identify high-value targets
+- **No transaction history** → Can't craft tailored attacks
+- **No NFT collection data** → Can't send fake airdrop scams
+
+**Real-world context:** In 2023, over $100M was stolen via targeted phishing enabled by wallet data harvesting. Privacy-preserving authentication makes these attacks significantly harder by removing the data attackers need to identify and target victims.
+
+**With Veiled:**
+- ❌ Apps can't see your wallet address → Can't query holdings
+- ❌ Apps can't track you across sites → Different nullifier per domain
+- ❌ Apps can't correlate users → Nullifiers are unlinkable
+- ❌ Data brokers can't build profiles → Nothing to aggregate
+- ✅ You authenticate safely → Prove ownership without exposure
 
 ---
 
