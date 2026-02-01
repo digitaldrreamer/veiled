@@ -50,3 +50,14 @@ export type {
   SubmitProofResult 
 } from './solana/program.js';
 
+// * Widget exports
+export type {
+  WidgetConfig,
+  WidgetInstance,
+  WidgetState,
+  WidgetStateData,
+  ProgressCallback,
+  ProgressStage
+} from './types/widget.js';
+export { createSignInWidget, renderButton, openAuthModal } from './ui/sign-in-widget-api.js';
+// * Note: SignInWidgetRef is intentionally NOT exported - it's a React implementation detail
