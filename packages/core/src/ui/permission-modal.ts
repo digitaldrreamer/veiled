@@ -98,8 +98,20 @@ export class PermissionModal {
     `;
   }
 
-  private getPermissionInfo(permission: Permission) {
-    const info: Record<Permission, any> = {
+  private getPermissionInfo(permission: Permission): {
+    icon: string;
+    name: string;
+    description: string;
+    risk: string;
+    severity: 'high' | 'medium' | 'low' | 'critical';
+  } {
+    const info: Record<Permission, {
+      icon: string;
+      name: string;
+      description: string;
+      risk: string;
+      severity: 'high' | 'medium' | 'low' | 'critical';
+    }> = {
       [Permission.RevealWalletAddress]: {
         icon: '🔑',
         name: 'Your Wallet Address',
