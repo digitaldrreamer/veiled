@@ -60,3 +60,32 @@ export function createSolanaWalletAdapter(
     }
   };
 }
+
+/**
+ * * Auto-adapts a Solana wallet to Veiled's WalletAdapter interface
+ * * Accepts either a Veiled WalletAdapter (returns as-is) or a Solana wallet adapter (wraps it)
+ * * This enables developers to pass Solana wallets directly without manual bridging
+ */
+export function adaptSolanaWallet(
+  wallet: WalletAdapter | SolanaWalletAdapter
+): WalletAdapter {
+  // * Already a Veiled WalletAdapter? Return as-is
+  if (
+    wallet &&
+    typeof (wallet as WalletAdapter).signMessage === 'function' &&
+    'publicKey' in wallet &&
+    'connected' in wallet
+  ) {
+    // * Check if it's already our interface (has all required methods)
+    const adapter = wallet as WalletAdapter;
+    if (
+      typeof adapter.connect === 'function' &&
+      typeof adapter.disconnect === 'function'
+    ) {
+      return adapter;
+    }
+  }
+
+  // * Wrap Solana wallet adapter
+  return createSolanaWalletAdapter(wallet as SolanaWalletAdapter);
+}

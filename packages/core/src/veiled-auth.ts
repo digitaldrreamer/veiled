@@ -1,4 +1,22 @@
-import type { AuthResult, SignInOptions, VeiledConfig } from './types.js';
+// * IMMEDIATE LOG - MODULE LOADED
+console.log('🔵 [VEILED] ========================================');
+console.log('🔵 [VEILED] veiled-auth.ts MODULE LOADED');
+console.log('🔵 [VEILED] ========================================');
+// * SUPER OBVIOUS - CANNOT MISS THIS
+if (typeof window !== 'undefined') {
+  console.error('🔴🔴🔴 VEILED-AUTH.TS LOADED 🔴🔴🔴');
+  console.error('🔴🔴🔴 IF YOU SEE THIS, MODULE IS LOADING 🔴🔴🔴');
+}
+
+import type {
+  AuthResult,
+  SignInOptions,
+  VeiledConfig,
+  PermissionRequest,
+  Permission,
+  Session,
+  VeiledRequirements
+} from './types.js';
 import { 
   prepareProofInputs, 
   generateProof, 
@@ -6,11 +24,20 @@ import {
   createVerificationResult,
   hashProofAsync
 } from './proof/generator.js';
+import { prepareBalanceRangeCircuitInputs, prepareNFTOwnershipCircuitInputs } from './proof/generator.js';
+import { QuicknodeClient } from './providers/quicknode-client.js';
 import type { WalletAdapter } from './wallet/adapter.js';
 import { getWalletProof, prepareSecretKeyFromSignature } from './wallet/adapter.js';
-import { submitVerificationResultToChain } from './solana/program.js';
-import type { Connection } from '@solana/web3.js';
+import { adaptSolanaWallet } from './wallet/solana-adapter.js';
+import {
+  submitVerificationResultToChain,
+  grantPermissionsOnChain,
+  revokePermissionsOnChain,
+  logPermissionAccessOnChain
+} from './solana/program.js';
+import { Connection, clusterApiUrl } from '@solana/web3.js';
 import type { Wallet } from '@coral-xyz/anchor';
+import { PermissionModal } from './ui/permission-modal.js';
 
 /**
  * * Framework-agnostic SDK surface.
@@ -21,9 +48,31 @@ export class VeiledAuth {
   private walletAdapter: WalletAdapter | null = null;
   private connection: Connection | null = null;
   private wallet: Wallet | null = null;
+  private currentSession: Session | null = null;
+  private currentDomain: string | null = null;
 
   constructor(config: VeiledConfig) {
+    // * Future-proof chain validation - only Solana is supported for now
+    if (config.chain !== 'solana') {
+      throw new Error(
+        `Unsupported chain "${config.chain}". This version of Veiled only supports "solana".`
+      );
+    }
+
     this.config = config;
+
+    // * Auto-adapt Solana wallet if provided in config
+    if (config.wallet) {
+      try {
+        this.walletAdapter = adaptSolanaWallet(config.wallet);
+      } catch (error) {
+        console.warn(
+          '[Veiled] Failed to adapt wallet from config:',
+          error instanceof Error ? error.message : String(error)
+        );
+        // * Don't throw - allow setWalletAdapter() to be called later
+      }
+    }
   }
   
   /**
@@ -35,17 +84,58 @@ export class VeiledAuth {
   }
 
   /**
-   * * Sets Solana connection and wallet for on-chain operations
-   * * Required for proof submission to Anchor program
+   * * Creates Solana Connection from config
+   * * Uses rpcUrl if provided (Helius Secure URL or custom), otherwise falls back to rpcProvider
    */
-  setSolanaConnection(connection: Connection, wallet: Wallet): void {
-    this.connection = connection;
-    this.wallet = wallet;
+  private createSolanaConnection(): Connection {
+    // * Priority 1: Use rpcUrl if provided (Helius Secure URL or custom endpoint)
+    if (this.config.rpcUrl) {
+      return new Connection(this.config.rpcUrl, 'confirmed');
+    }
+    
+    // * Priority 2: Use rpcProvider to construct URL
+    if (this.config.rpcProvider === 'helius' && this.config.heliusApiKey) {
+      // * For now, default to devnet (can be made configurable later)
+      const baseUrl = 'https://devnet.helius-rpc.com';
+      return new Connection(`${baseUrl}/?api-key=${this.config.heliusApiKey}`, 'confirmed');
+    }
+    
+    if (this.config.rpcProvider === 'quicknode' && this.config.quicknodeEndpoint) {
+      return new Connection(this.config.quicknodeEndpoint, 'confirmed');
+    }
+    
+    // * Fallback: Public RPC (for demo/testing)
+    return new Connection(clusterApiUrl('devnet'), 'confirmed');
   }
 
-  async signIn(options: SignInOptions): Promise<AuthResult> {
+  /**
+   * * Sets Solana connection and wallet for on-chain operations
+   * * Required for proof submission to Anchor program
+   * * If connection is not provided, creates one from config
+   */
+  setSolanaConnection(connection?: Connection, wallet?: Wallet): void {
+    if (connection && wallet) {
+      this.connection = connection;
+      this.wallet = wallet;
+    } else if (wallet) {
+      // * Auto-create connection from config if not provided
+      this.connection = this.createSolanaConnection();
+      this.wallet = wallet;
+    } else if (connection) {
+      this.connection = connection;
+    }
+  }
+
+  async signIn(options: SignInOptions): Promise<Session> {
+    console.log('🔵 [VEILED] ========================================');
+    console.log('🔵 [VEILED] VeiledAuth.signIn() called');
+    console.log('🔵 [VEILED] Options:', JSON.stringify(options, null, 2));
+    
     if (!this.walletAdapter) {
-      throw new Error('Wallet not connected. Call setWalletAdapter() first.');
+      console.error('🔴 [VEILED] Wallet adapter not set!');
+      throw new Error(
+        'Wallet not connected. Pass `wallet` in VeiledAuth config or call setWalletAdapter() after your Solana wallet connects.'
+      );
     }
 
     if (!this.walletAdapter.connected) {
@@ -62,17 +152,109 @@ export class VeiledAuth {
       walletProof.message
     );
     
-    // * Prepare proof inputs (matches circuit structure)
+    // * Select circuit based on requirements
+    const circuitType = this.selectCircuit(options.requirements);
+    console.log('🔵 [VEILED] ========================================');
+    console.log('🔵 [VEILED] Circuit Selection');
+    console.log('🔵 [VEILED] Requirements:', JSON.stringify(options.requirements, null, 2));
+    console.log('🔵 [VEILED] Selected Circuit:', circuitType);
+    console.log('🔵 [VEILED] ========================================');
+
+    let proofResult;
+    let proofHex: string;
+    let balanceRangeBucket: number | undefined;
+
+    if (circuitType === 'balance_range') {
+      console.log('🔵 [VEILED] Using balance_range circuit');
+      // * Ensure wallet is set
+      if (!this.wallet) {
+        throw new Error('Wallet required for balance range proof. Call setSolanaConnection() with wallet.');
+      }
+      // * Auto-create connection from config if not set
+      if (!this.connection) {
+        this.connection = this.createSolanaConnection();
+      }
+
+      console.log('🔵 [VEILED] Preparing balance range circuit inputs...');
+      const balanceInputs = await prepareBalanceRangeCircuitInputs(
+        options,
+        walletSecretKey,
+        this.connection,
+        this.wallet
+      );
+      console.log('🔵 [VEILED] Balance inputs prepared:', balanceInputs);
+
+      console.log('🔵 [VEILED] Generating balance range proof...');
+      proofResult = await generateProof(balanceInputs, 'balance_range');
+      proofHex = '0x' + Array.from(proofResult.proof)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      
+      // * Extract balance range bucket from inputs
+      balanceRangeBucket = balanceInputs.balanceRangeBucket;
+    } else if (circuitType === 'nft_ownership') {
+      console.log('🔵 [VEILED] Using nft_ownership circuit');
+      if (!this.wallet) {
+        console.error('🔴 [VEILED] Wallet required for NFT ownership proof');
+        throw new Error('Wallet required for NFT ownership proof');
+      }
+
+      // * Create Quicknode client
+      if (!this.config.quicknodeEndpoint) {
+        throw new Error('Quicknode endpoint required for NFT ownership circuit. Set quicknodeEndpoint in VeiledConfig.');
+      }
+      const quicknodeClient = new QuicknodeClient(
+        this.config.quicknodeEndpoint,
+        this.config.quicknodeApiKey
+      );
+
+      console.log('🔵 [VEILED] Preparing NFT ownership circuit inputs...');
+      const nftInputs = await prepareNFTOwnershipCircuitInputs(
+        options,
+        walletSecretKey,
+        quicknodeClient,
+        this.wallet
+      );
+      console.log('🔵 [VEILED] NFT inputs prepared:', nftInputs);
+
+      console.log('🔵 [VEILED] Generating NFT ownership proof...');
+      proofResult = await generateProof(nftInputs, 'nft_ownership');
+      proofHex = '0x' + Array.from(proofResult.proof)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    } else {
+      // * Default: wallet ownership circuit
+      console.log('🔵 [VEILED] Using wallet_ownership circuit');
+      console.log('🔵 [VEILED] Preparing wallet ownership circuit inputs...');
     const proofInputs = await prepareProofInputs(options, walletSecretKey);
-    
-    // * Generate ZK proof using Noir circuit
-    const proofResult = await generateProof(proofInputs);
+      console.log('🔵 [VEILED] Proof inputs prepared:', proofInputs);
+      console.log('🔵 [VEILED] Generating wallet ownership proof...');
+      // #region agent log
+      fetch('http://127.0.0.1:7253/ingest/7771b592-8da6-468a-80be-e69122580b2d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'veiled-auth.ts:135',message:'BEFORE_GENERATE_PROOF',data:{circuitType:'wallet_ownership'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+      // #endregion
+      proofResult = await generateProof(proofInputs, 'wallet_ownership');
+      // #region agent log
+      fetch('http://127.0.0.1:7253/ingest/7771b592-8da6-468a-80be-e69122580b2d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'veiled-auth.ts:137',message:'AFTER_GENERATE_PROOF',data:{hasProof:!!proofResult.proof,proofLength:proofResult.proof?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+      // #endregion
+      proofHex = '0x' + Array.from(proofResult.proof)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
     
     // * Verify proof off-chain using WASM backend
+    // * CRITICAL: Must pass the full publicInputsArray and circuitType to verifyProof()
+    // * Verification requires the same public inputs array and circuit type used during proof generation
     console.log('🔐 Verifying proof off-chain...');
+    console.log('🔵 [VEILED] Circuit type:', circuitType);
+    console.log('🔵 [VEILED] Public inputs array length:', proofResult.publicInputsArray.length);
+    console.log('🔵 [VEILED] Public inputs for verification:', proofResult.publicInputs);
     let isValid: boolean;
     try {
-      isValid = await verifyProof(proofResult.proof);
+      isValid = await verifyProof(
+        proofResult.proof, 
+        proofResult.publicInputsArray, 
+        proofResult.circuitType
+      );
       
       if (!isValid) {
         throw new Error('Proof verification failed. The generated proof is invalid.');
@@ -84,11 +266,6 @@ export class VeiledAuth {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`Proof verification failed: ${message}. Cannot proceed with invalid proof.`);
     }
-    
-    // * Convert proof bytes to hex string for storage/transmission
-    const proofHex = '0x' + Array.from(proofResult.proof)
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
 
     // * Submit verification result to Anchor program if connection is available
     let txSignature: string | undefined;
@@ -149,13 +326,38 @@ export class VeiledAuth {
       }
     }
 
-    return {
+    // * Base auth result (without permissions)
+    const baseResult: AuthResult = {
       success: true,
       nullifier: proofResult.publicInputs.nullifier,
       proof: proofHex,
       commitment: proofResult.publicInputs.walletPubkeyHash,
       txSignature
     };
+
+    // * Handle optional permission flow
+    let grantedPermissions: Permission[] = [];
+    if (options.permissions && this.connection && this.wallet) {
+      grantedPermissions = await this.requestPermissions(
+        baseResult.nullifier,
+        options.domain,
+        options.permissions
+      );
+    }
+
+    const session: Session = {
+      ...baseResult,
+      verified: true,
+      permissions: grantedPermissions,
+      expiresAt:
+        Date.now() +
+        (options.permissions?.duration ? options.permissions.duration * 1000 : (options.expiry ?? 3600) * 1000),
+      balanceRangeBucket
+    };
+
+    this.currentSession = session;
+    this.currentDomain = options.domain;
+    return session;
   }
 
   async verifySession(nullifier: string): Promise<{ valid: boolean; expired?: boolean }> {
@@ -213,6 +415,129 @@ export class VeiledAuth {
 
   async signOut(): Promise<void> {
     // TODO: Support session expiry / revocation where applicable.
+    this.currentSession = null;
+    this.currentDomain = null;
+  }
+
+  /**
+   * * Requests permissions from the user and writes PermissionGrant on-chain
+   */
+  private async requestPermissions(
+    nullifierHex: string,
+    domain: string,
+    request: PermissionRequest
+  ): Promise<Permission[]> {
+    if (!this.connection || !this.wallet) {
+      throw new Error('Connection and wallet must be set before requesting permissions.');
+    }
+
+    const modal = new PermissionModal();
+    const approved = await modal.request(request.permissions, request.reason);
+
+    if (!approved) {
+      return [];
+    }
+
+    // #region agent log
+    fetch('http://127.0.0.1:7253/ingest/7771b592-8da6-468a-80be-e69122580b2d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'veiled-auth.ts:429',message:'REQUEST_PERMISSIONS_ENTRY',data:{hasConnection:!!this.connection,hasWallet:!!this.wallet,permissionsCount:request.permissions.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
+    try {
+      // #region agent log
+      fetch('http://127.0.0.1:7253/ingest/7771b592-8da6-468a-80be-e69122580b2d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'veiled-auth.ts:430',message:'BEFORE_GRANT_PERMISSIONS_CALL',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
+      await grantPermissionsOnChain({
+        connection: this.connection,
+        wallet: this.wallet,
+        nullifierHex,
+        domain,
+        permissions: request.permissions,
+        durationSeconds: request.duration
+      });
+      // #region agent log
+      fetch('http://127.0.0.1:7253/ingest/7771b592-8da6-468a-80be-e69122580b2d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'veiled-auth.ts:439',message:'AFTER_GRANT_PERMISSIONS_SUCCESS',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
+
+      return request.permissions;
+    } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7253/ingest/7771b592-8da6-468a-80be-e69122580b2d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'veiled-auth.ts:440',message:'VEILED_AUTH_CATCH_ENTRY',data:{errorType:typeof error,isError:error instanceof Error,errorMessage:(error as any)?.message?.substring(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
+      // * If permission grant fails, surface error to caller
+      const message = error instanceof Error ? error.message : String(error);
+      // #region agent log
+      fetch('http://127.0.0.1:7253/ingest/7771b592-8da6-468a-80be-e69122580b2d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'veiled-auth.ts:443',message:'BEFORE_RETHROW',data:{extractedMessage:message.substring(0,200)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
+      throw new Error(`Failed to grant permissions: ${message}`);
+    }
+  }
+
+  /**
+   * * Determine which circuit to use based on requirements
+   */
+  private selectCircuit(
+    requirements: VeiledRequirements
+  ): 'wallet_ownership' | 'balance_range' | 'nft_ownership' {
+    if (requirements.nft?.collection !== undefined) {
+      return 'nft_ownership';
+    }
+    if (requirements.balance?.minimum !== undefined) {
+      return 'balance_range';
+    }
+    return 'wallet_ownership';
+  }
+
+  /**
+   * * Logs when a specific permission is actually used (audit trail)
+   */
+  async logPermissionAccess(permission: Permission, metadata?: string): Promise<void> {
+    if (!this.connection || !this.wallet) {
+      throw new Error('Connection and wallet must be set before logging permission access.');
+    }
+
+    if (!this.currentSession) {
+      throw new Error('No active session. Call signIn() first.');
+    }
+
+    if (!this.currentSession.permissions.includes(permission)) {
+      throw new Error('Permission not granted for current session.');
+    }
+
+    if (!this.currentDomain) {
+      throw new Error('Current session domain is unknown.');
+    }
+
+    await logPermissionAccessOnChain({
+      connection: this.connection,
+      wallet: this.wallet,
+      nullifierHex: this.currentSession.nullifier,
+      domain: this.currentDomain,
+      permission,
+      metadata
+    });
+  }
+
+  /**
+   * * Revokes all permissions for the current session
+   */
+  async revokePermissions(): Promise<void> {
+    if (!this.connection || !this.wallet) {
+      throw new Error('Connection and wallet must be set before revoking permissions.');
+    }
+
+    if (!this.currentSession) {
+      throw new Error('No active session. Call signIn() first.');
+    }
+
+    if (!this.currentDomain) {
+      throw new Error('Current session domain is unknown.');
+    }
+
+    await revokePermissionsOnChain({
+      connection: this.connection,
+      wallet: this.wallet,
+      nullifierHex: this.currentSession.nullifier,
+      domain: this.currentDomain
+    });
   }
 }
 

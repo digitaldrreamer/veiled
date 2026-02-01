@@ -1,7 +1,7 @@
 // * Verification key exporter with JSON format support
 // * Based on research: JSON-based VK conversion is recommended
 
-import { BarretenbergBackend } from '@noir-lang/backend_barretenberg';
+import type { UltraHonkBackend } from '@aztec/bb.js';
 import type { CompiledCircuit } from './circuit-loader.js';
 
 /**
@@ -9,7 +9,7 @@ import type { CompiledCircuit } from './circuit-loader.js';
  * * Returns JSON string with hex-encoded field elements
  */
 export async function exportVerificationKeyAsJson(
-  backend: BarretenbergBackend
+  backend: UltraHonkBackend
 ): Promise<string> {
   try {
     const vk = await backend.getVerificationKey();
@@ -43,7 +43,7 @@ export async function exportVerificationKeyAsJson(
  * * Returns Uint8Array
  */
 export async function exportVerificationKeyAsBinary(
-  backend: BarretenbergBackend
+  backend: UltraHonkBackend
 ): Promise<Uint8Array> {
   try {
     const vk = await backend.getVerificationKey();
