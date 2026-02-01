@@ -1,0 +1,564 @@
+/* * Sign-in widget styles
+ * * Extracted and adapted from electric-border.css design reference
+ */
+
+/* CSS Variables */
+:root {
+  --electric-border-color: #c0c0c0;
+  --electric-light-color: oklch(from var(--electric-border-color) l c h);
+  --gradient-color: oklch(from var(--electric-border-color) 0.3 calc(c / 2) h / 0.4);
+  --color-neutral-900: oklch(0.185 0 0);
+  --silver-bright: #e8e8e8;
+  --silver-medium: #a8a8a8;
+  --silver-dark: #808080;
+}
+
+/* OAuth Button */
+.veiled-widget .oauth-button {
+  background: linear-gradient(135deg, rgba(192, 192, 192, 0.2), rgba(232, 232, 232, 0.1));
+  border: 2px solid rgba(192, 192, 192, 0.5);
+  border-radius: 14px;
+  padding: 12px 32px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  pointer-events: auto !important;
+  z-index: 100;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.veiled-widget .oauth-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.veiled-widget .oauth-button:hover {
+  border-color: rgba(232, 232, 232, 0.8);
+  box-shadow: 0 0 20px rgba(192, 192, 192, 0.3);
+}
+
+.veiled-widget .oauth-button:hover::before {
+  left: 100%;
+}
+
+.veiled-widget .oauth-button-text {
+  position: relative;
+  z-index: 1;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Modal Backdrop */
+.veiled-widget .modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.veiled-widget .modal-backdrop.visible {
+  opacity: 1;
+}
+
+/* Modal Container */
+.veiled-widget .modal-container {
+  position: relative;
+  z-index: 10002;
+  animation: modalSlideUp 0.3s ease-out;
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* OAuth Card Wrapper */
+.veiled-widget .oauth-card-wrapper {
+  width: 420px;
+  position: relative;
+}
+
+.veiled-widget .oauth-card-inner {
+  position: relative;
+}
+
+.veiled-widget .border-outer-oauth {
+  border: 2px solid rgba(192, 192, 192, 0.5);
+  border-radius: 24px;
+  padding-right: 4px;
+  padding-bottom: 4px;
+}
+
+.veiled-widget .oauth-main-card {
+  min-height: 520px;
+  border-radius: 24px;
+  border: 2px solid var(--electric-border-color);
+  margin-top: -4px;
+  margin-left: -4px;
+  filter: url(#turbulent-displace-modal);
+  background: linear-gradient(-30deg, var(--gradient-color), transparent, var(--gradient-color)),
+    linear-gradient(to bottom, var(--color-neutral-900), var(--color-neutral-900));
+  position: relative;
+}
+
+.veiled-widget .glow-layer-1-oauth {
+  border: 2px solid rgba(192, 192, 192, 0.6);
+  border-radius: 24px;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  filter: blur(1px);
+  pointer-events: none;
+}
+
+.veiled-widget .glow-layer-2-oauth {
+  border: 2px solid var(--electric-light-color);
+  border-radius: 24px;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  filter: blur(4px);
+  pointer-events: none;
+}
+
+.veiled-widget .overlay-1-oauth {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 24px;
+  opacity: 1;
+  mix-blend-mode: overlay;
+  transform: scale(1.1);
+  filter: blur(16px);
+  background: linear-gradient(-30deg, white, transparent 30%, transparent 70%, white);
+  pointer-events: none;
+}
+
+.veiled-widget .overlay-2-oauth {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 24px;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  transform: scale(1.1);
+  filter: blur(16px);
+  background: linear-gradient(-30deg, white, transparent 30%, transparent 70%, white);
+  pointer-events: none;
+}
+
+.veiled-widget .background-glow-oauth {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 24px;
+  filter: blur(32px);
+  transform: scale(1.1);
+  opacity: 0.3;
+  z-index: -1;
+  background: linear-gradient(-30deg, var(--silver-bright), transparent, var(--electric-border-color));
+  pointer-events: none;
+}
+
+/* Close Button */
+.veiled-widget .close-button-oauth {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.veiled-widget .close-button-oauth:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* OAuth Content Wrapper */
+.veiled-widget .oauth-content-wrapper {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 24px;
+  overflow: hidden;
+  z-index: 5;
+}
+
+/* OAuth Screens */
+.veiled-widget .oauth-screen {
+  position: absolute;
+  inset: 0;
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  animation: slideInLeft 0.25s ease-out forwards;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.veiled-widget .oauth-screen.slide-in-left {
+  animation: slideInLeft 0.25s ease-out forwards;
+}
+
+.veiled-widget .oauth-screen.slide-in-right {
+  animation: slideInRight 0.25s ease-out forwards;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.veiled-widget .oauth-screen-header {
+  margin-bottom: 32px;
+}
+
+.veiled-widget .oauth-screen-header h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.veiled-widget .oauth-screen-header p {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Wallet Grid */
+.veiled-widget .wallet-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: auto 0;
+}
+
+.veiled-widget .wallet-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  border-radius: 16px;
+  border: 2px solid rgba(192, 192, 192, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.veiled-widget .wallet-option:hover {
+  border-color: rgba(192, 192, 192, 0.6);
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.veiled-widget .wallet-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.veiled-widget .wallet-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Progress Container */
+.veiled-widget .progress-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin: auto 0;
+}
+
+.veiled-widget .spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(192, 192, 192, 0.2);
+  border-top-color: rgba(192, 192, 192, 0.8);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.veiled-widget .progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(192, 192, 192, 0.2);
+}
+
+.veiled-widget .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #c0c0c0, #e8e8e8);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.veiled-widget .progress-text {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+}
+
+/* Permissions List */
+.veiled-widget .permissions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.veiled-widget .permission-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(192, 192, 192, 0.2);
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Success Content */
+.veiled-widget .success-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  margin: auto 0;
+}
+
+.veiled-widget .success-icon {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  border-radius: 50%;
+  background: rgba(232, 232, 232, 0.1);
+  border: 2px solid rgba(232, 232, 232, 0.4);
+  animation: bounceCheckmark 0.4s ease-out;
+  color: rgba(232, 232, 232, 0.9);
+}
+
+@keyframes bounceCheckmark {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.veiled-widget .session-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.veiled-widget .session-info p {
+  margin: 0;
+}
+
+.veiled-widget .session-info strong {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Error Content */
+.veiled-widget .error-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  margin: auto 0;
+}
+
+.veiled-widget .error-icon {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  border-radius: 50%;
+  background: rgba(255, 100, 100, 0.1);
+  border: 2px solid rgba(255, 100, 100, 0.3);
+  color: rgba(255, 150, 150, 0.9);
+  animation: shakeError 0.3s ease-in-out;
+}
+
+@keyframes shakeError {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-8px);
+  }
+  75% {
+    transform: translateX(8px);
+  }
+}
+
+.veiled-widget .error-message {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  max-width: 280px;
+}
+
+.veiled-widget .error-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.veiled-widget .btn-retry,
+.veiled-widget .btn-cancel {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 2px solid rgba(192, 192, 192, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.veiled-widget .btn-retry {
+  border-color: rgba(232, 232, 232, 0.6);
+  background: rgba(232, 232, 232, 0.1);
+}
+
+.veiled-widget .btn-retry:hover {
+  background: rgba(232, 232, 232, 0.2);
+  border-color: rgba(232, 232, 232, 0.8);
+}
+
+.veiled-widget .btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(192, 192, 192, 0.6);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .veiled-widget .oauth-card-wrapper {
+    width: 100vw;
+    max-width: 380px;
+  }
+
+  .veiled-widget .oauth-main-card {
+    min-height: 480px;
+  }
+
+  .veiled-widget .oauth-screen {
+    padding: 32px 24px;
+  }
+
+  .veiled-widget .wallet-grid {
+    gap: 8px;
+  }
+
+  .veiled-widget .wallet-option {
+    padding: 16px;
+  }
+
+  .veiled-widget .wallet-icon {
+    font-size: 28px;
+  }
+}
