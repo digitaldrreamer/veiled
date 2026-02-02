@@ -12,8 +12,11 @@ COPY packages/core/package.json ./packages/core/
 
 # * Stage 2: Install dependencies
 FROM base AS deps
-# * Install build dependencies for native modules
-RUN apk add --no-cache python3 make g++
+# * Install build dependencies for native modules (including linux-headers for usb)
+RUN apk add --no-cache python3 make g++ linux-headers
+
+# * Remove lockfile to ensure overrides are applied fresh
+RUN rm -f bun.lock
 
 # * Install all workspace dependencies (skip optional to avoid native module issues)
 RUN bun install --no-optional || bun install
