@@ -5,6 +5,12 @@ import { sveltekit } from '@sveltejs/kit/vite';
 export default defineConfig({
 	plugins: [sveltekit()],
 
+	ssr: {
+		// * Externalize @speed-highlight/core for SSR (client-only package)
+		noExternal: [],
+		external: ['@speed-highlight/core']
+	},
+
 	test: {
 		expect: { requireAssertions: true },
 

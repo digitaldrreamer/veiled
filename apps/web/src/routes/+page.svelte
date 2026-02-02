@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { highlightElement } from '@speed-highlight/core';
+	import { browser } from '$app/environment';
 
 	// * Landing page for Veiled - Privacy-preserving authentication for Solana
 
@@ -30,9 +30,16 @@
 		codeCardTransform = 'rotateX(0deg) rotateY(0deg) translateZ(0)';
 	}
 
-	onMount(() => {
-		if (codeBlockElement) {
-			highlightElement(codeBlockElement, 'ts');
+	onMount(async () => {
+		// * Client-only: Dynamically import speed-highlight to avoid SSR issues
+		if (browser && codeBlockElement) {
+			try {
+				const { highlightElement } = await import('@speed-highlight/core');
+				highlightElement(codeBlockElement, 'ts');
+			} catch (error) {
+				// * Gracefully degrade if speed-highlight fails to load
+				console.warn('Failed to load syntax highlighter:', error);
+			}
 		}
 	});
 </script>
