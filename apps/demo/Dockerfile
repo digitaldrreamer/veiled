@@ -42,11 +42,16 @@ COPY --from=build-core /app/packages/core/dist ./packages/core/dist
 COPY --from=build-core /app/packages/core/package.json ./packages/core/package.json
 
 # * Copy app source and config files
-COPY apps/demo ./apps/demo
+COPY apps/demo/app ./apps/demo/app
+COPY apps/demo/components ./apps/demo/components
+COPY apps/demo/lib ./apps/demo/lib
+COPY apps/demo/hooks ./apps/demo/hooks
+COPY apps/demo/public ./apps/demo/public
 COPY apps/demo/next.config.mjs ./apps/demo/
 COPY apps/demo/tsconfig.json ./apps/demo/
 COPY apps/demo/postcss.config.mjs ./apps/demo/
 COPY apps/demo/components.json ./apps/demo/
+COPY apps/demo/package.json ./apps/demo/
 
 WORKDIR /app/apps/demo
 
