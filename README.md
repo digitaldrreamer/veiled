@@ -8,7 +8,7 @@
 
 Built for [Solana Privacy Hack 2026](https://solana.com/privacyhack)
 
-**Quick Links:** [🚀 Live Demo](https://veiled.vercel.app) | [📹 Demo Video](https://youtu.be/0Xi2R70rcqQ) | [📖 Quick Start](#quick-start) | [🎯 Use Cases](#use-cases) | [🧬 Program on Solscan](https://solscan.io/account/H6apEGZAw23AKUeqCX41wkDv2LVwX3Ec8oYPip7k3xzA?cluster=devnet) | [🔎 A transaction on Solscan](https://solscan.io/tx/2WX83AEnc6sZuSzFTN4Du7kURXNJoLVqZQfGzmo3L1vZG683TxZWSyzAfMcGy7tXGEGGg6K9MFofWYcKNFt2pd42?cluster=devnet) | [🛠️ Development](#development-setup) | [🧪 Testing](#testing)
+**Quick Links:** [🚀 Live Demo](https://veiled.vercel.app) | [📹 Demo Video](https://youtu.be/0Xi2R70rcqQ) | [📖 Quick Start](#quick-start) | [🎯 Use Cases](#use-cases) | [🧬 Program on Solscan](https://solscan.io/account/H6apEGZAw23AKUeqCX41wkDv2LVwX3Ec8oYPip7k3xzA?cluster=devnet) | [🔎 A transaction on Solscan](https://solscan.io/tx/2WX83AEnc6sZuSzFTN4Du7kURXNJoLVqZQfGzmo3L1vZG683TxZWSyzAfMcGy7tXGEGGg6K9MFofWYcKNFt2pd42?cluster=devnet) | [🖼️ Gallery](#gallery) | [🛠️ Development](#development-setup) | [🧪 Testing](#testing)
 
 ---
 
@@ -1065,6 +1065,136 @@ const veiled = new VeiledAuth({
 - [ ] Wallet integrations (Phantom, Backpack)
 - [ ] Framework components (React, Vue, Svelte)
 - [ ] Enterprise features (SSO, SAML)
+
+---
+
+## 🖼️ Gallery
+
+**Traditional auth exposes wallet info**
+
+![Traditional Auth Exposes Wallet Info](resources/exposed_wallet_info_default_auth.png)
+
+Shows how traditional Solana authentication exposes your full wallet balance, NFTs, and transaction history to every dApp.
+
+---
+
+**Default Solana auth with exposed credentials**
+
+![Default Solana Auth with Exposed Credentials](resources/screen-showing-default-solana-auth-with-exposed-credentials.png)
+
+Wallet connect modal showing how current Solana auth flows reveal your wallet address and balances by default.
+
+---
+
+**Side-by-side comparison: Traditional vs Veiled**
+
+![Side-by-Side Comparison: Traditional vs Veiled Authentication](resources/demo_app_both_login_buttons.png)
+
+Demo app screen showing both traditional "Connect Wallet" and privacy-preserving "Sign in with Veiled" login options.
+
+---
+
+**Anonymous Veiled ID**
+
+![Veiled Anonymous ID](resources/anonymous_id_veiled.png)
+
+Shows the persistent but unlinkable anonymous identifier Veiled issues instead of exposing your raw wallet address.
+
+---
+
+**AI chat with exposed credentials**
+
+![AI Chat with Exposed Credentials](resources/ai_chat_showing_exposed_credentials.png)
+
+AI assistant view where the dApp can see full wallet balances and positions when using default authentication.
+
+---
+
+**AI chat with secure ZK by Veiled**
+
+![AI Chat with Secure ZK by Veiled](resources/ai_chat_showing_secure_zk_by_veiled.png)
+
+The same AI assistant experience using Veiled proofs, showing that only the minimum required facts are revealed.
+
+---
+
+**Anonymous authentication**
+
+![Anonymous Authentication Example](resources/anonymous-authentication.png)
+
+End-user login flow where a user authenticates with Veiled without ever revealing their wallet address.
+
+---
+
+**NFT-gated access**
+
+![NFT-Gated Access Example](resources/nft-gated-access.png)
+
+Example of gating access to content or communities based on NFT ownership without exposing which specific NFT you hold.
+
+---
+
+**DeFi balance requirements**
+
+![DeFi Balance Requirements Example](resources/defi-balance-requirements.png)
+
+Veiled balance range proof UI where a user proves their SOL balance meets a minimum threshold without sharing the exact amount.
+
+---
+
+**Anonymous DAO voting**
+
+![Anonymous DAO Voting Example](resources/anonymous-dao-voting.png)
+
+Mock DAO voting interface that uses Veiled proofs so users can vote based on eligibility while remaining anonymous.
+
+---
+
+**Gaming cross-game identity**
+
+![Gaming Cross-Game Identity Example](resources/gaming-cross-game-identity.png)
+
+Concept mock for using Veiled to carry reputation or eligibility across games without linking underlying wallets.
+
+---
+
+**Privacy with flexible permissions**
+
+![Permission Request Modal](resources/privacy-with-flexibility.png)
+
+Permission management screens showing how Veiled lets users granularly approve what each dApp can learn via ZK proofs.
+
+---
+
+**Generating a ZK proof**
+
+![Generating ZK Proof](resources/generating_zk_proof.png)
+
+Proof generation step in the Veiled flow where the client produces a Noir-based ZK proof locally in the browser.
+
+---
+
+**Waiting for wallet signature (step 1)**
+
+![Waiting for Wallet Signature](resources/waiting_for_wallet_signature.png)
+
+UI state where the user is prompted to approve a signature so the proof result can be attested on-chain.
+
+---
+
+**Waiting for wallet signature (step 2)**
+
+![Waiting for Wallet Signature – Step 2](resources/waiting_for_wallet_signature_step_2.png)
+
+Follow-up wallet confirmation screen indicating the second stage of the signing process in the demo app.
+
+---
+
+**Generated ZK proof auth complete**
+
+![Generated ZK Proof Auth Complete](resources/generated_zk_proof_auth_complete.png)
+
+Final confirmation view showing that the ZK proof has been generated, verified, and authentication is complete.
 
 ---
 
