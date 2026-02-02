@@ -69,14 +69,14 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# * Copy necessary files from build stage
-COPY --from=build-app /app/apps/demo/public ./public
+# * Copy standalone output (monorepo structure: apps/demo/server.js)
 COPY --from=build-app /app/apps/demo/.next/standalone ./
-COPY --from=build-app /app/apps/demo/.next/static ./.next/static
 
-# * Copy workspace dependency
-COPY --from=build-core /app/packages/core/dist ./packages/core/dist
-COPY --from=build-core /app/packages/core/package.json ./packages/core/package.json
+# * Copy static files to the correct location within the monorepo structure
+COPY --from=build-app /app/apps/demo/.next/static ./apps/demo/.next/static
+
+# * Copy public files
+COPY --from=build-app /app/apps/demo/public ./apps/demo/public
 
 # * Set correct permissions
 RUN chown -R nextjs:nodejs /app
@@ -88,4 +88,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+# * Run from the monorepo app location
+CMD ["node", "apps/demo/server.js"]
