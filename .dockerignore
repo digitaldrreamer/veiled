@@ -5,8 +5,10 @@
 !package.json
 !bun.lock
 
-# Allow apps/demo
+# Allow apps (demo + web)
 !apps/
+
+# Allow apps/demo
 !apps/demo/
 !apps/demo/app/
 !apps/demo/app/**
@@ -24,9 +26,25 @@
 !apps/demo/components.json
 !apps/demo/package.json
 
-# Allow packages/core
+# Allow apps/web
+!apps/web/
+!apps/web/src/
+!apps/web/src/**
+!apps/web/static/
+!apps/web/static/**
+!apps/web/svelte.config.js
+!apps/web/vite.config.ts
+!apps/web/tsconfig.json
+!apps/web/eslint.config.js
+!apps/web/playwright.config.ts
+!apps/web/package.json
+
+# Allow packages/core and packages/anchor (source only, no node_modules)
 !packages/
 !packages/core/
 !packages/core/**
 !packages/anchor/
 !packages/anchor/**
+
+# Re-ignore any node_modules everywhere
+**/node_modules

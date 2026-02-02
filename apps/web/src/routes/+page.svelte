@@ -1,5 +1,40 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { highlightElement } from '@speed-highlight/core';
+
 	// * Landing page for Veiled - Privacy-preserving authentication for Solana
+
+	let codeBlockElement: HTMLElement | null = null;
+
+	// * 3D tilt state for the code card
+	let codeCardTransform = 'rotateX(0deg) rotateY(0deg) translateZ(0)';
+
+	function handleCodeMouseMove(event: MouseEvent) {
+		const card = event.currentTarget as HTMLElement;
+		const rect = card.getBoundingClientRect();
+
+		// * Normalize mouse position to [-0.5, 0.5]
+		const x = event.clientX - rect.left;
+		const y = event.clientY - rect.top;
+		const percentX = x / rect.width - 0.5;
+		const percentY = y / rect.height - 0.5;
+
+		const maxRotate = 8;
+		const rotateX = -percentY * maxRotate;
+		const rotateY = percentX * maxRotate;
+
+		codeCardTransform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(8px)`;
+	}
+
+	function handleCodeMouseLeave() {
+		codeCardTransform = 'rotateX(0deg) rotateY(0deg) translateZ(0)';
+	}
+
+	onMount(() => {
+		if (codeBlockElement) {
+			highlightElement(codeBlockElement, 'ts');
+		}
+	});
 </script>
 
 <div class="page">
@@ -76,7 +111,8 @@
 	<nav>
 		<div class="nav-logo">Veiled</div>
 		<div class="nav-links">
-			<a href="https://veiled.vercel.app" target="_blank" class="nav-link">Demo</a>
+			<a href="https://veiled.drreamer.digital" target="_blank" class="nav-link">Demo</a>
+			<a href="https://veiled.drreamer.digital/use-cases" target="_blank" class="nav-link">Use cases</a>
 			<a href="https://github.com/digitaldrreamer/veiled" target="_blank" class="nav-link">GitHub</a>
 		</div>
 	</nav>
@@ -90,7 +126,7 @@
 			Authenticate on Solana without exposing your wallet address, balance, or transaction history.
 		</p>
 		<div class="hero-cta">
-			<a href="https://veiled.vercel.app" target="_blank" class="btn-primary">
+			<a href="https://veiled.drreamer.digital" target="_blank" class="btn-primary">
 				Try Demo
 			</a>
 			<a
@@ -149,6 +185,10 @@
 						<span class="card-list-icon" style="color: rgb(248 113 113);">❌</span>
 						<span>Transaction history</span>
 					</li>
+					<li class="card-list-item">
+						<span class="card-list-icon" style="color: rgb(248 113 113);">❌</span>
+						<span>Trackable across sites</span>
+					</li>
 				</ul>
 			</div>
 
@@ -178,6 +218,10 @@
 						<li class="card-list-item">
 							<span class="card-list-icon" style="color: oklch(0.696 0.17 162.48);">✅</span>
 							<span>Zero wallet exposure</span>
+						</li>
+						<li class="card-list-item">
+							<span class="card-list-icon" style="color: oklch(0.696 0.17 162.48);">✅</span>
+							<span>Unlinkable across sites and completely clientside (no backend required)</span>
 						</li>
 					</ul>
 				</div>
@@ -212,6 +256,56 @@
 					</p>
 				</div>
 			</div>
+		</div>
+	</section>
+
+	<!-- Code Example -->
+	<section class="section">
+		<div class="code-section">
+			<h2 class="code-section-title">
+				Anonymous, untrackable authentication with selective disclosure in three lines of code
+			</h2>
+			<div
+				class="code-block-wrapper"
+				style={`transform: ${codeCardTransform};`}
+				on:mousemove={handleCodeMouseMove}
+				on:mouseleave={handleCodeMouseLeave}
+				role="presentation"
+				aria-hidden="true"
+			>
+				<div class="code-card-header">
+					<div class="code-card-dots">
+						<span class="code-card-dot code-card-dot-red" aria-hidden="true"></span>
+						<span class="code-card-dot code-card-dot-amber" aria-hidden="true"></span>
+						<span class="code-card-dot code-card-dot-green" aria-hidden="true"></span>
+					</div>
+					<div class="code-card-title" aria-hidden="true">example.ts</div>
+					<div class="code-card-spacer" aria-hidden="true"></div>
+				</div>
+				<div class="code-card-body">
+					<div
+						bind:this={codeBlockElement}
+						class="shj-lang-ts code-block"
+					>{`import { VeiledAuth } from '@veiled-auth/core';
+
+const veiled = new VeiledAuth({ chain: 'solana', rpcProvider: 'helius' });
+const { nullifier } = await veiled.signIn({ 
+  requirements: { wallet: true }, 
+  domain: 'myapp.com' 
+});`}</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- ZK Proof Generation Visual -->
+	<section class="section">
+		<div class="proof-visual-container">
+			<img
+				src="/generating_zk_proof.png"
+				alt="Generating zero-knowledge proof with Veiled"
+				class="proof-visual-image"
+			/>
 		</div>
 	</section>
 
@@ -266,7 +360,7 @@
 					GitHub
 				</a>
 				<a
-					href="https://veiled.vercel.app"
+					href="https://veiled.drreamer.digital"
 					target="_blank"
 					class="footer-link"
 				>

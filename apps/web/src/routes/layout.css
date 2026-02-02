@@ -433,6 +433,191 @@ nav {
 	font-size: 0.875rem;
 }
 
+/* * Code Section */
+.code-section {
+	max-width: 56rem;
+	margin-left: auto;
+	margin-right: auto;
+	text-align: center;
+	perspective: 1200px;
+}
+
+.code-section-title {
+	font-size: 1.875rem;
+	font-weight: 700;
+	margin-bottom: 2rem;
+	line-height: 1.4;
+}
+
+@media (min-width: 768px) {
+	.code-section-title {
+		font-size: 2.25rem;
+	}
+}
+
+.code-block-wrapper {
+	margin-top: 2rem;
+	border-radius: 0.75rem;
+	overflow: hidden;
+	background-color: oklch(0.145 0 0);
+	border: 1px solid oklch(0.269 0 0);
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+	text-align: left;
+	transform-style: preserve-3d;
+	transition:
+		transform 0.15s ease-out,
+		box-shadow 0.15s ease-out,
+		border-color 0.15s ease-out,
+		background-color 0.15s ease-out;
+}
+
+.code-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.6rem 0.9rem;
+	border-bottom: 1px solid oklch(0.269 0 0);
+	background: linear-gradient(
+		to bottom,
+		oklch(0.22 0 0) 0%,
+		oklch(0.19 0 0) 40%,
+		oklch(0.17 0 0) 100%
+	);
+}
+
+.code-card-dots {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.code-card-dot {
+	width: 0.7rem;
+	height: 0.7rem;
+	border-radius: 9999px;
+	border: 1px solid rgba(0, 0, 0, 0.35);
+	box-shadow:
+		0 0 0 1px rgba(0, 0, 0, 0.15),
+		0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+.code-card-dot-red {
+	background: radial-gradient(circle at 30% 30%, #ff8b82, #ff5f57);
+}
+
+.code-card-dot-amber {
+	background: radial-gradient(circle at 30% 30%, #ffe29a, #febc2e);
+}
+
+.code-card-dot-green {
+	background: radial-gradient(circle at 30% 30%, #b6ffb3, #28c840);
+}
+
+.code-card-title {
+	flex: 1;
+	text-align: center;
+	font-size: 0.75rem;
+	color: oklch(0.708 0 0);
+	letter-spacing: 0.04em;
+}
+
+.code-card-spacer {
+	width: 3rem;
+}
+
+.code-card-body {
+	padding: 0.25rem 0.75rem 0.75rem;
+}
+
+.code-block-wrapper .code-block {
+	margin: 0;
+	padding: 1.25rem 1.25rem 1.5rem;
+	overflow-x: auto;
+	background-color: oklch(0.145 0 0);
+	font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+	font-size: 0.875rem;
+	line-height: 1.6;
+	color: oklch(0.985 0 0);
+}
+
+.code-block-wrapper:hover {
+	box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5);
+	border-color: oklch(0.488 0.243 264.376);
+	background-color: oklch(0.18 0 0);
+}
+
+/* * Ensure all text in code block is visible by default */
+.code-block-wrapper .code-block :global(*) {
+	color: oklch(0.985 0 0);
+}
+
+/* * Ensure speed-highlight syntax colors are visible on dark background */
+.code-block-wrapper .code-block :global(.shj-syn-deleted),
+.code-block-wrapper .code-block :global(.shj-syn-inserted),
+.code-block-wrapper .code-block :global(.shj-syn-selector),
+.code-block-wrapper .code-block :global(.shj-syn-operator),
+.code-block-wrapper .code-block :global(.shj-syn-function),
+.code-block-wrapper .code-block :global(.shj-syn-keyword),
+.code-block-wrapper .code-block :global(.shj-syn-string),
+.code-block-wrapper .code-block :global(.shj-syn-number),
+.code-block-wrapper .code-block :global(.shj-syn-comment),
+.code-block-wrapper .code-block :global(.shj-syn-type),
+.code-block-wrapper .code-block :global(.shj-syn-class),
+.code-block-wrapper .code-block :global(.shj-syn-variable),
+.code-block-wrapper .code-block :global(.shj-syn-constant),
+.code-block-wrapper .code-block :global(.shj-syn-property),
+.code-block-wrapper .code-block :global(.shj-syn-punctuation) {
+	color: inherit;
+}
+
+/* * Override specific syntax colors for better visibility */
+.code-block-wrapper .code-block :global(.shj-syn-keyword) {
+	color: oklch(0.696 0.17 162.48);
+}
+
+.code-block-wrapper .code-block :global(.shj-syn-string) {
+	color: oklch(0.75 0.15 100);
+}
+
+.code-block-wrapper .code-block :global(.shj-syn-function) {
+	color: oklch(0.7 0.15 200);
+}
+
+.code-block-wrapper .code-block :global(.shj-syn-comment) {
+	color: oklch(0.5 0 0);
+}
+
+.code-block-wrapper .code-block :global(.shj-syn-number) {
+	color: oklch(0.75 0.15 50);
+}
+
+.code-block-wrapper .code-block :global(.shj-syn-punctuation) {
+	color: oklch(0.8 0 0);
+}
+
+@media (min-width: 768px) {
+	.code-block-wrapper .code-block {
+		padding: 2rem;
+		font-size: 0.9375rem;
+	}
+}
+
+/* * ZK Proof Visual */
+.proof-visual-container {
+	max-width: 80rem;
+	margin-left: auto;
+	margin-right: auto;
+	padding: 0 1.5rem;
+}
+
+.proof-visual-image {
+	width: 100%;
+	height: auto;
+	border-radius: 0.75rem;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+	display: block;
+}
+
 /* * Performance Card */
 .performance-card {
 	max-width: 48rem;
