@@ -1,0 +1,32 @@
+# Ignore everything by default
+*
+
+# Allow package files
+!package.json
+!bun.lock
+
+# Allow apps/demo
+!apps/
+!apps/demo/
+!apps/demo/app/
+!apps/demo/app/**
+!apps/demo/components/
+!apps/demo/components/**
+!apps/demo/lib/
+!apps/demo/lib/**
+!apps/demo/hooks/
+!apps/demo/hooks/**
+!apps/demo/public/
+!apps/demo/public/**
+!apps/demo/next.config.mjs
+!apps/demo/tsconfig.json
+!apps/demo/postcss.config.mjs
+!apps/demo/components.json
+!apps/demo/package.json
+
+# Allow packages/core
+!packages/
+!packages/core/
+!packages/core/**
+!packages/anchor/
+!packages/anchor/**
