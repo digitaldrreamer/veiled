@@ -8,7 +8,7 @@
 
 Built for [Solana Privacy Hack 2026](https://solana.com/privacyhack)
 
-**Quick Links:** [🚀 Live Demo](https://veiled.vercel.app) | [📹 Demo Video](https://youtu.be/0Xi2R70rcqQ) | [📖 Quick Start](#quick-start) | [🎯 Use Cases](#use-cases) | [🛠️ Development](#development-setup) | [🧪 Testing](#testing)
+**Quick Links:** [🚀 Live Demo](https://veiled.vercel.app) | [📹 Demo Video](https://youtu.be/0Xi2R70rcqQ) | [📖 Quick Start](#quick-start) | [🎯 Use Cases](#use-cases) | [🧬 Program on Solscan](https://solscan.io/account/H6apEGZAw23AKUeqCX41wkDv2LVwX3Ec8oYPip7k3xzA?cluster=devnet) | [🔎 A transaction on Solscan](https://solscan.io/tx/2WX83AEnc6sZuSzFTN4Du7kURXNJoLVqZQfGzmo3L1vZG683TxZWSyzAfMcGy7tXGEGGg6K9MFofWYcKNFt2pd42?cluster=devnet) | [🛠️ Development](#development-setup) | [🧪 Testing](#testing)
 
 ---
 
