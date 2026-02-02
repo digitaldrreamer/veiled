@@ -146,6 +146,18 @@ console.log('Authenticated:', session.nullifier);
 
 **For advanced security:** See [Production Deployment](#production-deployment) for Quicknode JWT setup.
 
+### ⚠️ Current Limitations
+
+**Network Support:**
+- ✅ **Devnet only** - Mainnet support coming post-audit
+- ⚠️ Only tested with **Phantom wallet Chrome extension**
+- Other wallets may work but are not officially supported yet
+
+**To use Veiled:**
+1. Switch your wallet to **Solana Devnet** (Phantom: Settings → Developer Mode → Change Network)
+2. Get devnet SOL from [Solana Faucet](https://faucet.solana.com/)
+3. Use the **Phantom wallet Chrome extension** for best compatibility
+
 ---
 
 ## 🚀 Live Deployment
@@ -535,6 +547,13 @@ As a natural consequence of privacy-first design, Veiled provides significant se
 ## 🛠️ Development Setup
 
 ### Prerequisites
+
+**⚠️ Important:** Veiled currently supports **devnet wallets only** and has been tested with the **Phantom wallet Chrome extension**. Other wallets may work but are not officially supported.
+
+**Required:**
+- Phantom wallet Chrome extension (tested)
+- Wallet connected to Solana Devnet
+- Devnet SOL (get from [Solana Faucet](https://faucet.solana.com/))
 
 ```bash
 # Required versions (verify before starting)

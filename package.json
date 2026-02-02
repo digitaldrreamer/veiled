@@ -13,7 +13,8 @@
     "deploy:devnet": "bash scripts/deploy-program.sh devnet",
     "deploy:localnet": "bash scripts/deploy-program.sh localnet",
     "mint-devnet-nft": "bun scripts/mint-devnet-nft.ts",
-    "verify-nft-collection": "bun scripts/verify-nft-collection.ts"
+    "verify-nft-collection": "bun scripts/verify-nft-collection.ts",
+    "remotion:studio": "cd remotion && bun run studio"
   },
   "dependencies": {
     "@aztec/bb.js": "0.82.2",

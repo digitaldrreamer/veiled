@@ -152,3 +152,6 @@ storybook-static/
 
 # Turbo
 .turbo
+
+# Remotion project (sample/development)
+remotion/
