@@ -47,6 +47,8 @@
 		"vitest-browser-svelte": "^2.0.1"
 	},
 	"dependencies": {
-		"@speed-highlight/core": "^1.2.14"
+		"@speed-highlight/core": "^1.2.14",
+		"shiki": "^1.29.1",
+		"shiki-magic-move": "^1.2.1"
 	}
 }

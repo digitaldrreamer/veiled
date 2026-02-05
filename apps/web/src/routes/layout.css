@@ -131,34 +131,37 @@ nav {
 
 .btn-primary {
 	padding: 1rem 2rem;
-	background-color: oklch(0.488 0.243 264.376);
+	background-color: oklch(0.985 0 0);
+	color: oklch(0.145 0 0);
 	border-radius: 0.5rem;
 	font-weight: 600;
 	transition: all 0.2s;
 	display: inline-block;
 	position: relative;
-	box-shadow: 0 0 20px oklch(0.488 0.243 264.376 / 0.3);
+	box-shadow: 0 0 20px rgba(148, 163, 184, 0.4);
 }
 
 .btn-primary:hover {
-	background-color: oklch(0.488 0.243 264.376 / 0.8);
-	transform: scale(1.05);
-	box-shadow: 0 0 30px oklch(0.488 0.243 264.376 / 0.5);
+	background-color: oklch(0.97 0 0);
+	transform: scale(1.03);
+	box-shadow: 0 0 26px rgba(148, 163, 184, 0.6);
 }
 
 .btn-secondary {
 	padding: 1rem 2rem;
-	border: 2px solid oklch(0.269 0 0);
+	border: 2px solid oklch(0.985 0 0);
 	border-radius: 0.5rem;
 	font-weight: 600;
 	transition: all 0.2s;
 	display: inline-block;
 	position: relative;
+	background-color: oklch(0.185 0 0);
+	color: oklch(0.985 0 0);
 }
 
 .btn-secondary:hover {
-	border-color: oklch(0.488 0.243 264.376);
-	box-shadow: 0 0 15px oklch(0.488 0.243 264.376 / 0.2);
+	border-color: oklch(0.97 0 0);
+	box-shadow: 0 0 15px rgba(148, 163, 184, 0.35);
 }
 
 /* * Section */
@@ -223,7 +226,7 @@ nav {
 }
 
 .image-label.veiled {
-	color: oklch(0.696 0.17 162.48);
+	color: oklch(0.985 0 0);
 }
 
 .comparison-image {
@@ -368,7 +371,7 @@ nav {
 }
 
 .card-label.veiled {
-	color: oklch(0.696 0.17 162.48);
+	color: oklch(0.985 0 0);
 }
 
 .card-title {
@@ -572,7 +575,7 @@ nav {
 
 /* * Override specific syntax colors for better visibility */
 .code-block-wrapper .code-block :global(.shj-syn-keyword) {
-	color: oklch(0.696 0.17 162.48);
+	color: oklch(0.985 0 0);
 }
 
 .code-block-wrapper .code-block :global(.shj-syn-string) {
@@ -650,8 +653,256 @@ nav {
 .performance-metric {
 	font-size: 1.875rem;
 	font-weight: 700;
-	color: oklch(0.696 0.17 162.48);
+	color: oklch(0.985 0 0);
 	margin-bottom: 0.5rem;
+}
+
+/* * Veiled Behind-the-Scenes Flow */
+.veiled-flow-container {
+	max-width: 80rem;
+	margin-left: auto;
+	margin-right: auto;
+	padding: 0 1.5rem;
+}
+
+.veiled-flow {
+	margin-top: 2rem;
+	border-radius: 1.75rem;
+	padding: 2rem 2rem;
+	background: radial-gradient(circle at top left, #020617, #020617 40%, #020817 75%, #000000);
+	color: #e5e7eb;
+	border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.veiled-flow-header h2 {
+	margin: 0 0 0.4rem;
+	font-size: 1.7rem;
+}
+
+.veiled-flow-header p {
+	margin: 0 0 1.5rem;
+	font-size: 0.95rem;
+	color: #9ca3af;
+}
+
+.veiled-flow-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr);
+	gap: 1.75rem;
+}
+
+@media (max-width: 900px) {
+	.veiled-flow-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.veiled-widget {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.veiled-widget-header {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.veiled-badge {
+	align-self: flex-start;
+	padding: 0.25rem 0.7rem;
+	border-radius: 999px;
+	font-size: 0.7rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	background: rgba(15, 23, 42, 0.9);
+	border: 1px solid rgba(148, 163, 184, 0.8);
+	color: #f9fafb;
+}
+
+.veiled-step-label {
+	font-size: 1rem;
+	font-weight: 500;
+}
+
+.veiled-widget-window {
+	border-radius: 1.25rem;
+	overflow: hidden;
+	border: 1px solid rgba(148, 163, 184, 0.4);
+	background: rgba(15, 23, 42, 0.96);
+	box-shadow: 0 20px 50px rgba(15, 23, 42, 0.9);
+}
+
+.veiled-widget-title-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.4rem 0.9rem;
+	background: linear-gradient(to right, #020617, #020617 40%, #0f172a);
+	border-bottom: 1px solid rgba(30, 64, 175, 0.6);
+}
+
+.veiled-widget-title-bar .veiled-dots {
+	display: flex;
+	gap: 0.25rem;
+}
+
+.veiled-dot {
+	width: 0.55rem;
+	height: 0.55rem;
+	border-radius: 999px;
+}
+
+.veiled-dot-red {
+	background: #ef4444;
+}
+
+.veiled-dot-yellow {
+	background: #facc15;
+}
+
+.veiled-dot-green {
+	background: #22c55e;
+}
+
+.veiled-widget-title {
+	font-size: 0.8rem;
+	color: #9ca3af;
+}
+
+.veiled-widget-body {
+	padding: 1rem 1.1rem 0.75rem;
+	font-size: 0.9rem;
+}
+
+.veiled-widget-body p {
+	margin: 0.1rem 0;
+}
+
+.veiled-widget-footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.5rem;
+	padding: 0.75rem 1.1rem 0.9rem;
+	background: rgba(15, 23, 42, 0.96);
+}
+
+.veiled-widget-caption {
+	margin: 0;
+	font-size: 0.85rem;
+	color: #9ca3af;
+}
+
+.veiled-code {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.veiled-code-frame {
+	border-radius: 1rem;
+	overflow: hidden;
+	background: radial-gradient(circle at top left, #020617, #020617 40%, #020617 80%, #020617);
+	border: 1px solid rgba(148, 163, 184, 0.5);
+	box-shadow: 0 18px 45px rgba(0, 0, 0, 0.6);
+}
+
+.veiled-code-placeholder {
+	padding: 1.5rem;
+	border-radius: 1rem;
+	background: #020617;
+	border: 1px dashed rgba(75, 85, 99, 0.8);
+	color: #9ca3af;
+	font-size: 0.9rem;
+}
+
+.veiled-steps-nav {
+	display: flex;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+	margin-top: 0.75rem;
+}
+
+.veiled-steps-nav button {
+	min-width: 2rem;
+	height: 2rem;
+	border-radius: 999px;
+	border: 1px solid rgba(148, 163, 184, 0.7);
+	background: #020617;
+	color: #9ca3af;
+	font-size: 0.8rem;
+	cursor: pointer;
+	transition:
+		background 150ms ease-out,
+		color 150ms ease-out,
+		border-color 150ms ease-out,
+		transform 120ms ease-out;
+}
+
+.veiled-steps-nav button.veiled-active {
+	background: #f9fafb;
+	color: #020617;
+	border-color: transparent;
+	transform: translateY(-1px);
+}
+
+.veiled-step-actions {
+	margin-top: 0.5rem;
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.5rem;
+}
+
+.veiled-step-btn {
+	padding: 0.4rem 0.9rem;
+	font-size: 0.8rem;
+}
+
+/* * Veiled Video Section */
+.veiled-video-container {
+	max-width: 72rem;
+	margin-left: auto;
+	margin-right: auto;
+	padding: 0 1.5rem;
+	text-align: center;
+}
+
+.veiled-video-subtitle {
+	margin-top: 0.5rem;
+	margin-bottom: 2rem;
+	color: oklch(0.708 0 0);
+	font-size: 0.95rem;
+	max-width: 40rem;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.veiled-video-frame {
+	position: relative;
+	width: 100%;
+	max-width: 960px;
+	margin-left: auto;
+	margin-right: auto;
+	border-radius: 1rem;
+	overflow: hidden;
+	box-shadow: 0 18px 45px rgba(0, 0, 0, 0.6);
+	border: 1px solid oklch(0.269 0 0);
+	background-color: #000;
+}
+
+.veiled-video-frame::before {
+	content: '';
+	display: block;
+	padding-bottom: 56.25%; /* 16:9 aspect ratio */
+}
+
+.veiled-video-iframe {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	border: none;
 }
 
 .performance-label {
