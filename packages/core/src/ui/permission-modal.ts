@@ -268,7 +268,8 @@ export class PermissionModal {
         justify-content: center;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.3s;
+        transition: opacity 0.25s ease-out;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
       }
       
       .veiled-permission-modal.veiled-modal--visible {
@@ -276,68 +277,91 @@ export class PermissionModal {
         pointer-events: auto;
       }
       
+      /* * RED LIGHTNING EFFECT - backdrop glow */
       .veiled-modal__backdrop {
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.7);
+        background: radial-gradient(circle at top, rgba(248, 113, 113, 0.35), transparent 55%),
+                    radial-gradient(circle at bottom, rgba(185, 28, 28, 0.3), transparent 55%),
+                    rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
       }
       
       .veiled-modal__content {
         position: relative;
-        background: white;
-        border-radius: 16px;
-        padding: 24px;
-        max-width: 500px;
-        width: 90%;
+        max-width: 520px;
+        width: min(520px, 100% - 32px);
         max-height: 80vh;
+        padding: 20px 22px 16px;
+        border-radius: 18px;
+        /* * Match main widget background */
+        background: linear-gradient(-30deg, rgba(192, 192, 192, 0.1), transparent, rgba(192, 192, 192, 0.1)),
+                    linear-gradient(to bottom, oklch(0.185 0 0), oklch(0.185 0 0));
+        /* * Match main widget border */
+        border: 2px solid rgba(192, 192, 192, 0.5);
+        /* * RED LIGHTNING EFFECT - box shadow glows */
+        box-shadow:
+          0 0 0 1px rgba(15, 23, 42, 0.9),
+          0 18px 55px rgba(15, 23, 42, 0.85),
+          0 0 35px rgba(248, 113, 113, 0.25),
+          0 0 55px rgba(185, 28, 28, 0.25);
         overflow-y: auto;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        /* * Match main widget text color */
+        color: rgba(255, 255, 255, 0.95);
       }
       
       .veiled-modal__header h2 {
-        margin: 0 0 8px 0;
-        color: #dc2626;
-        font-size: 20px;
+        margin: 0 0 6px 0;
+        font-size: 18px;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        /* * Match main widget header color */
+        color: rgba(255, 255, 255, 0.95);
       }
       
       .veiled-modal__header p {
         margin: 0;
-        color: #6b7280;
+        font-size: 13px;
+        /* * Match main widget description color */
+        color: rgba(255, 255, 255, 0.6);
       }
       
       .veiled-modal__permissions {
-        margin: 20px 0;
+        margin: 18px 0 16px;
       }
       
       .permission-item {
         display: flex;
-        gap: 12px;
-        padding: 12px;
-        border-radius: 8px;
-        margin-bottom: 12px;
-        border: 2px solid #e5e7eb;
+        gap: 10px;
+        padding: 10px 11px;
+        border-radius: 11px;
+        margin-bottom: 10px;
+        /* * Match main widget border and background */
+        border: 2px solid rgba(192, 192, 192, 0.3);
+        background: rgba(255, 255, 255, 0.05);
       }
       
       .permission-item.high {
-        border-color: #dc2626;
-        background: #fef2f2;
+        border-color: rgba(192, 192, 192, 0.5);
+        box-shadow: 0 0 16px rgba(192, 192, 192, 0.2);
       }
       
       .permission-item.medium {
-        border-color: #f59e0b;
-        background: #fffbeb;
+        border-color: rgba(192, 192, 192, 0.4);
+        box-shadow: 0 0 16px rgba(192, 192, 192, 0.15);
       }
       
       .permission-item.critical {
-        border-color: #991b1b;
-        background: #fee2e2;
+        border-color: rgba(192, 192, 192, 0.6);
+        box-shadow: 0 0 20px rgba(192, 192, 192, 0.25);
       }
       
       .permission-icon {
-        font-size: 24px;
+        font-size: 22px;
+        flex-shrink: 0;
       }
       
       .permission-details {
@@ -346,114 +370,151 @@ export class PermissionModal {
       
       .permission-name {
         font-weight: 600;
-        color: #1f2937;
-        margin-bottom: 4px;
+        /* * Match main widget text color */
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 2px;
+        font-size: 14px;
       }
       
       .permission-description {
-        font-size: 14px;
-        color: #6b7280;
-        margin-bottom: 4px;
+        font-size: 12px;
+        /* * Match main widget description color */
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 2px;
       }
       
       .permission-risk {
-        font-size: 12px;
-        color: #dc2626;
+        font-size: 11px;
+        /* * Match main widget accent color (silver) */
+        color: rgba(192, 192, 192, 0.8);
         font-weight: 600;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
       }
       
       .veiled-modal__reason {
-        background: #f3f4f6;
-        padding: 12px;
-        border-radius: 8px;
-        margin-bottom: 16px;
-        font-size: 14px;
+        /* * Match main widget background */
+        background: rgba(255, 255, 255, 0.05);
+        padding: 10px 12px;
+        border-radius: 10px;
+        margin-bottom: 14px;
+        font-size: 12px;
+        /* * Match main widget text color */
+        color: rgba(255, 255, 255, 0.8);
+        /* * Match main widget border */
+        border: 1px solid rgba(192, 192, 192, 0.4);
       }
       
       .veiled-modal__privacy-impact {
-        background: #fef2f2;
-        border: 2px solid #dc2626;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 20px;
+        /* * Match main widget background */
+        background: rgba(255, 255, 255, 0.05);
+        /* * Match main widget border */
+        border: 1px solid rgba(192, 192, 192, 0.4);
+        border-radius: 12px;
+        padding: 13px 12px;
+        margin-bottom: 16px;
       }
       
       .privacy-score {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         justify-content: center;
-        font-size: 18px;
+        font-size: 15px;
         font-weight: 600;
-        margin-bottom: 8px;
+        margin-bottom: 4px;
       }
       
       .score-before {
-        color: #10b981;
+        /* * Match main widget accent color */
+        color: rgba(192, 192, 192, 0.9);
       }
       
       .score-after.critical {
-        color: #991b1b;
+        /* * Match main widget accent color */
+        color: rgba(192, 192, 192, 0.9);
       }
       
       .score-after.high {
-        color: #dc2626;
+        /* * Match main widget accent color */
+        color: rgba(192, 192, 192, 0.8);
       }
       
       .score-after.medium {
-        color: #f59e0b;
+        /* * Match main widget accent color */
+        color: rgba(192, 192, 192, 0.7);
       }
       
       .score-after.low {
-        color: #3b82f6;
+        /* * Match main widget accent color */
+        color: rgba(192, 192, 192, 0.8);
       }
       
       .privacy-warning {
         text-align: center;
         margin: 0;
-        color: #991b1b;
-        font-size: 14px;
+        /* * Match main widget text color */
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 12px;
       }
       
       .veiled-modal__actions {
         display: flex;
-        gap: 12px;
+        gap: 10px;
+        margin-top: 6px;
       }
       
       .btn-deny,
       .btn-allow {
         flex: 1;
-        padding: 12px 24px;
+        padding: 10px 18px;
         border: none;
-        border-radius: 8px;
-        font-size: 16px;
+        border-radius: 999px;
+        font-size: 13px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: transform 0.12s ease-out, box-shadow 0.12s ease-out, background 0.12s ease-out;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
       }
       
+      /* * Match main widget button style */
       .btn-deny {
-        background: #10b981;
-        color: white;
+        background: rgba(255, 255, 255, 0.05);
+        color: rgba(255, 255, 255, 0.9);
+        border: 2px solid rgba(192, 192, 192, 0.4);
+        box-shadow: 0 0 0 1px rgba(192, 192, 192, 0.2);
       }
       
       .btn-deny:hover {
-        background: #059669;
+        transform: translateY(-1px);
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(192, 192, 192, 0.6);
+        box-shadow: 0 0 0 1px rgba(192, 192, 192, 0.3), 0 10px 25px rgba(0, 0, 0, 0.3);
       }
       
+      /* * Match main widget button style */
       .btn-allow {
-        background: #dc2626;
-        color: white;
+        background: rgba(255, 255, 255, 0.05);
+        color: rgba(255, 255, 255, 0.9);
+        border: 2px solid rgba(232, 232, 232, 0.6);
+        box-shadow: 0 0 0 1px rgba(232, 232, 232, 0.3);
       }
       
       .btn-allow:hover {
-        background: #b91c1c;
+        transform: translateY(-1px);
+        background: rgba(232, 232, 232, 0.1);
+        border-color: rgba(232, 232, 232, 0.8);
+        box-shadow: 0 0 0 1px rgba(232, 232, 232, 0.4), 0 10px 25px rgba(0, 0, 0, 0.3);
       }
       
       .veiled-modal__footer {
-        margin-top: 12px;
+        margin-top: 10px;
         text-align: center;
-        color: #6b7280;
+        /* * Match main widget description color */
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 11px;
       }
     `;
     
