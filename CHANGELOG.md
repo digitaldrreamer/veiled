@@ -69,3 +69,4 @@
 - Added project status & circuits plan doc; reaffirmed devnet strategy and next steps.
 
 - 2026-01-28: Initial project commit.
+- 2026-02-05: Add Veiled behind-the-scenes flow carousel and update button/green accent colors in web app.
