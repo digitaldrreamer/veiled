@@ -21,6 +21,11 @@ export function Providers({ children }: ProvidersProps) {
   const network = WalletAdapterNetwork.Devnet
   const endpoint = useMemo(() => clusterApiUrl(network), [network])
 
+  // * Quicknode endpoint for devnet (NFT ownership circuit - DAS API)
+  // * Safe to hardcode for demo; in production, read from env
+  const QUICKNODE_DEVNET_ENDPOINT =
+    "https://patient-skilled-arrow.solana-devnet.quiknode.pro/6716eee99a064e95be4c29b6dc3edd130464ee66/"
+
   // * Configure wallets
   // * Note: Phantom auto-registers as a Standard Wallet, so we don't need to add it manually
   const wallets = useMemo(
@@ -34,10 +39,9 @@ export function Providers({ children }: ProvidersProps) {
   const veiledConfig: Omit<VeiledConfig, 'wallet'> = {
     chain: 'solana',
     rpcProvider: 'helius',
-    rpcUrl: endpoint, // Use public devnet endpoint for demo
-    // * For production, use Helius Secure URL or Quicknode endpoint
-    // rpcUrl: 'https://your-helius-secure-url.helius-rpc.com',
-    // quicknodeEndpoint: 'https://your-quicknode-endpoint.quiknode.pro/...',
+    rpcUrl: endpoint, // Use public devnet endpoint for demo (balance / wallet circuits)
+    // * Quicknode endpoint is REQUIRED for the NFT ownership circuit (DAS API)
+    quicknodeEndpoint: QUICKNODE_DEVNET_ENDPOINT,
   }
 
   return (

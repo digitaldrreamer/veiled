@@ -170,6 +170,7 @@ export default function UseCasesPage() {
   const [activeUseCase, setActiveUseCase] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [lastCompletedUseCase, setLastCompletedUseCase] = useState<string | null>(null)
+  const [useCaseErrors, setUseCaseErrors] = useState<Record<string, string | null>>({})
 
   // * Helper to set up VeiledAuth connection
   const setupVeiledConnection = () => {
@@ -230,6 +231,7 @@ export default function UseCasesPage() {
   const openModalForUseCase = async (useCase: UseCase) => {
     setIsLoading(true)
     setActiveUseCase(useCase.id)
+    setUseCaseErrors((prev) => ({ ...prev, [useCase.id]: null }))
 
     try {
       // * Update config with success handler to track completion
@@ -239,11 +241,32 @@ export default function UseCasesPage() {
           setLastCompletedUseCase(useCase.id)
           setActiveUseCase(null)
           setIsLoading(false)
+          setUseCaseErrors((prev) => ({ ...prev, [useCase.id]: null }))
           useCase.config.onSuccess?.(newSession)
         },
         onError: (error) => {
           setActiveUseCase(null)
           setIsLoading(false)
+
+          const raw = error instanceof Error ? error.message : String(error)
+          let friendly = raw
+
+          if (raw.startsWith("Insufficient balance:")) {
+            friendly =
+              "Your devnet wallet balance is below the minimum required for this use case. " +
+              "Either fund your wallet with more SOL on devnet or lower the configured minimum in this demo."
+          } else if (raw.startsWith("No NFTs found in collection")) {
+            friendly =
+              "We couldn't find an NFT from the configured collection in your wallet. " +
+              "Double‑check that the collection address in this demo matches the one you actually minted from, " +
+              "or mint an NFT for that collection on devnet and try again."
+          } else if (raw.includes("Failed to deserialize circuit")) {
+            friendly =
+              "The proof circuit for this use case is out of sync with the browser runtime. " +
+              "Try a hard refresh (Cmd/Ctrl+Shift+R). If it still fails after that, the circuit artifacts need to be rebuilt and redeployed."
+          }
+
+          setUseCaseErrors((prev) => ({ ...prev, [useCase.id]: friendly }))
           useCase.config.onError?.(error)
         },
       }
@@ -344,6 +367,7 @@ export default function UseCasesPage() {
           {useCases.map((useCase) => {
             const isActive = activeUseCase === useCase.id
             const isCompleted = lastCompletedUseCase === useCase.id && session
+            const error = useCaseErrors[useCase.id]
 
             return (
               <Card
@@ -407,6 +431,14 @@ export default function UseCasesPage() {
                         ? "✓ Completed - Try Again"
                         : "Try This Use Case"}
                   </Button>
+
+                  {/* Error Indicator */}
+                  {error && (
+                    <div className="mt-3 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                      <div className="font-semibold mb-1">Why it failed</div>
+                      <div>{error}</div>
+                    </div>
+                  )}
 
                   {/* Success Indicator */}
                   {isCompleted && session && (

@@ -503,7 +503,17 @@
       {#if errorMessage}
         <div class="rounded-lg border border-red-200 bg-red-50 p-3">
           <div class="text-sm font-medium text-red-800">Error</div>
-          <div class="mt-1 text-sm text-red-700" style="word-break: break-word;">{errorMessage}</div>
+          <div class="mt-1 text-sm text-red-700" style="word-break: break-word;">
+            {#if errorMessage.startsWith('Insufficient balance:')}
+              {errorMessage}
+              <div class="mt-2 text-xs text-red-600">
+                Your wallet balance on devnet is below the minimum you configured for the balance range circuit.
+                Try lowering the <span class="font-mono">Minimum Balance</span> value above or funding your devnet wallet.
+              </div>
+            {:else}
+              {errorMessage}
+            {/if}
+          </div>
           <p class="mt-2 text-xs text-red-600">
             💡 Check the browser console (F12) for detailed error logs
           </p>

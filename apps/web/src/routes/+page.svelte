@@ -51,7 +51,10 @@
 const veiled = new VeiledAuth({
   chain: 'solana',
   rpcProvider: 'helius',
+  // * Primary RPC URL (Helius Secure URL - safe to expose)
   rpcUrl: 'https://your-secure-helius-url.helius-rpc.com',
+  // * Optional: Quicknode endpoint (REQUIRED if you ever use the NFT ownership circuit)
+  // * quicknodeEndpoint: 'https://your-quicknode-endpoint.solana-mainnet.quiknode.pro/...'
 });
 
 const session = await veiled.signIn({
