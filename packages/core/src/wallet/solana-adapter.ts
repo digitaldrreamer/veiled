@@ -2,8 +2,46 @@
 // * Bridges @solana/wallet-adapter-base to our WalletAdapter interface
 
 import type { WalletAdapter as SolanaWalletAdapter } from '@solana/wallet-adapter-base';
-import type { PublicKey } from '@solana/web3.js';
+import type { PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import type { WalletAdapter } from './adapter.js';
+
+/**
+ * * Solana wallet adapter that supports transaction signing (required for Anchor Wallet)
+ * * This is a subset of SolanaWalletAdapter that includes the transaction signing methods
+ */
+export interface SolanaTransactionSigningAdapter {
+  signTransaction(tx: Transaction | VersionedTransaction): Promise<Transaction | VersionedTransaction>;
+  signAllTransactions(txs: (Transaction | VersionedTransaction)[]): Promise<(Transaction | VersionedTransaction)[]>;
+}
+
+/**
+ * * Extended WalletAdapter that preserves access to Solana-specific methods
+ * * Needed for creating Anchor Wallet instances for on-chain operations
+ */
+export interface SolanaWalletAdapterWrapper extends WalletAdapter {
+  readonly __solanaAdapter: SolanaWalletAdapter & Partial<SolanaTransactionSigningAdapter>;
+  signTransaction?(tx: Transaction | VersionedTransaction): Promise<Transaction | VersionedTransaction>;
+  signAllTransactions?(txs: (Transaction | VersionedTransaction)[]): Promise<(Transaction | VersionedTransaction)[]>;
+}
+
+/**
+ * * Type guard to check if adapter has Solana-specific transaction signing methods
+ */
+export function hasSolanaTransactionSigning(
+  adapter: WalletAdapter | SolanaWalletAdapterWrapper
+): adapter is SolanaWalletAdapterWrapper & {
+  __solanaAdapter: SolanaWalletAdapter & SolanaTransactionSigningAdapter;
+} {
+  if (!('__solanaAdapter' in adapter) || !adapter.__solanaAdapter) {
+    return false;
+  }
+  
+  const solanaAdapter = adapter.__solanaAdapter;
+  return (
+    typeof solanaAdapter.signTransaction === 'function' &&
+    typeof solanaAdapter.signAllTransactions === 'function'
+  );
+}
 
 /**
  * * Wraps a Solana wallet adapter to match our WalletAdapter interface
@@ -11,8 +49,8 @@ import type { WalletAdapter } from './adapter.js';
  */
 export function createSolanaWalletAdapter(
   adapter: SolanaWalletAdapter
-): WalletAdapter {
-  return {
+): SolanaWalletAdapterWrapper {
+  const wrapped: SolanaWalletAdapterWrapper = {
     get publicKey(): PublicKey | null {
       return adapter.publicKey;
     },
@@ -57,8 +95,31 @@ export function createSolanaWalletAdapter(
       }
       
       throw new Error('Unsupported signature format');
-    }
+    },
+    
+    // * Store reference to original adapter for signTransaction/signAllTransactions access
+    __solanaAdapter: adapter,
+    
+    // * Expose Solana transaction signing methods if available on underlying adapter
+    // * These are optional on the wrapper but required for Anchor Wallet creation
+    signTransaction: 'signTransaction' in adapter && typeof adapter.signTransaction === 'function'
+      ? async (tx: Transaction | VersionedTransaction) => {
+          // * Type assertion: we've checked the method exists, but TypeScript doesn't know it's on the base type
+          const signingAdapter = adapter as unknown as SolanaTransactionSigningAdapter;
+          return await signingAdapter.signTransaction(tx);
+        }
+      : undefined,
+    
+    signAllTransactions: 'signAllTransactions' in adapter && typeof adapter.signAllTransactions === 'function'
+      ? async (txs: (Transaction | VersionedTransaction)[]) => {
+          // * Type assertion: we've checked the method exists, but TypeScript doesn't know it's on the base type
+          const signingAdapter = adapter as unknown as SolanaTransactionSigningAdapter;
+          return await signingAdapter.signAllTransactions(txs);
+        }
+      : undefined,
   };
+  
+  return wrapped;
 }
 
 /**

@@ -13,14 +13,14 @@ class SignInWidgetAPI implements WidgetInstance {
   private root: Root | null = null
   private container: HTMLElement | null = null
   private config: WidgetConfig | null = null
-  private widgetRef: React.RefObject<SignInWidgetRef>
+  private widgetRef: React.RefObject<SignInWidgetRef | null>
   private buttonElement: HTMLElement | null = null
   private isModalMode: boolean = false
   private modalContainer: HTMLElement | null = null // * Reference to modal container created by openAuthModal
 
   constructor(veiled: VeiledAuth) {
     this.veiled = veiled
-    this.widgetRef = React.createRef<SignInWidgetRef>()
+    this.widgetRef = React.createRef<SignInWidgetRef | null>()
   }
 
   mount(target: HTMLElement, config: WidgetConfig): void {

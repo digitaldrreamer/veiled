@@ -29,7 +29,8 @@ import { prepareBalanceRangeCircuitInputs, prepareNFTOwnershipCircuitInputs } fr
 import { QuicknodeClient } from './providers/quicknode-client.js';
 import type { WalletAdapter } from './wallet/adapter.js';
 import { getWalletProof, prepareSecretKeyFromSignature } from './wallet/adapter.js';
-import { adaptSolanaWallet } from './wallet/solana-adapter.js';
+import { adaptSolanaWallet, hasSolanaTransactionSigning, type SolanaWalletAdapterWrapper } from './wallet/solana-adapter.js';
+import type { Transaction, VersionedTransaction } from '@solana/web3.js';
 import {
   submitVerificationResultToChain,
   grantPermissionsOnChain,
@@ -236,6 +237,63 @@ export class VeiledAuth {
         progress?.onStageChange?.('wallet_connect', {
           walletAddress: this.walletAdapter.publicKey?.toBase58()
         });
+      }
+      
+      // * Auto-setup Anchor Wallet if not already set (required for balance_range and nft_ownership circuits)
+      // * This ensures circuits that need on-chain data can access the wallet
+      if (!this.wallet && this.walletAdapter.publicKey) {
+        console.log('🔵 [VEILED] Auto-setting up Anchor Wallet for on-chain operations...');
+        // * Auto-create connection from config if not set
+        if (!this.connection) {
+          this.connection = this.createSolanaConnection();
+        }
+        
+        // * Check if adapter supports Solana transaction signing (required for Anchor Wallet)
+        const walletAdapter = this.walletAdapter;
+        if (!hasSolanaTransactionSigning(walletAdapter)) {
+          throw new Error(
+            'Wallet adapter does not support transaction signing. ' +
+            'Required for balance_range and nft_ownership circuits. ' +
+            'Ensure you are using a Solana wallet adapter (Phantom, Solflare, etc.) that supports signTransaction and signAllTransactions.'
+          );
+        }
+        
+        // * Ensure publicKey is not null (type guard + runtime check)
+        if (!walletAdapter.publicKey) {
+          throw new Error('Wallet adapter publicKey is null. Wallet must be connected.');
+        }
+        
+        // * TypeScript now knows walletAdapter is SolanaWalletAdapterWrapper with required methods
+        // * Access the underlying Solana adapter (type guard guarantees it exists and has signing methods)
+        const underlyingSolanaAdapter = walletAdapter.__solanaAdapter;
+        
+        // * Create Anchor Wallet from adapter with proper typing
+        // * Anchor's generic Wallet interface is minimal: publicKey, signTransaction, signAllTransactions
+        // * The type guard ensures underlyingSolanaAdapter has signTransaction and signAllTransactions
+        // * Use generic functions to match Anchor's Wallet type signature
+        // * 
+        // * Note on payer: The Node-only NodeWallet class adds a payer: Keypair field, but that's not part
+        // * of the generic Wallet interface. However, some Anchor type definitions or ecosystem code
+        // * may expect payer to exist. We include it here as a fallback for signTransactionSafely()
+        // * which checks wallet.payer as a workaround for buggy wallet adapter wrappers.
+        // * In browser environments, there is no Keypair - only the wallet adapter object itself.
+        const anchorWallet: Wallet = {
+          publicKey: walletAdapter.publicKey,
+          signTransaction: async <T extends Transaction | VersionedTransaction>(tx: T): Promise<T> => {
+            const result = await underlyingSolanaAdapter.signTransaction(tx);
+            return result as T; // * Type assertion needed here because adapter returns union type, but we know it's the same type
+          },
+          signAllTransactions: async <T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> => {
+            const result = await underlyingSolanaAdapter.signAllTransactions(txs);
+            return result as T[]; // * Type assertion needed here because adapter returns union array, but we know it's the same type
+          },
+          // * payer: Included for compatibility with NodeWallet-style wallets and as fallback in signTransactionSafely()
+          // * In browser environments, this is the adapter itself (not a Keypair)
+          payer: underlyingSolanaAdapter as any, // * Type assertion: browser wallets don't have Keypair, but some code expects payer
+        };
+        
+        this.wallet = anchorWallet;
+        console.log('🔵 [VEILED] Anchor Wallet auto-setup complete');
       }
       
       // * Stage 2: Requirements Check

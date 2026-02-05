@@ -70,3 +70,6 @@
 
 - 2026-01-28: Initial project commit.
 - 2026-02-05: Add Veiled behind-the-scenes flow carousel and update button/green accent colors in web app.
+- chore: clarified Quicknode requirement for NFT circuit, improved balance-range demo UX, and updated permission modal theme
+- fix: ensure nft_ownership circuit json is served at /circuit-nft-ownership for Next demo on localhost:3000
+- fix: rebuild Noir circuits and improve use-case error UX for NFT, DeFi balance, and anonymous DAO flows
